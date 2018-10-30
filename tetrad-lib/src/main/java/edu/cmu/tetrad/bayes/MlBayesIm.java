@@ -1092,7 +1092,52 @@ public final class MlBayesIm implements BayesIm {
 
         return true;
     }
-
+    
+//	public String toString(int i) {
+//		StringBuilder buf = null;
+//		try {
+//			buf = new StringBuilder();
+//			NumberFormat nf = NumberFormatUtil.getInstance().getNumberFormat();
+//
+////			for (int i = 0; i < getNumNodes(); i++) {
+//				buf.append("\n\nNode: ").append(getNode(i));
+//
+//				if (getNumParents(i) == 0) {
+//					buf.append("\n");
+//				} else {
+//					buf.append("\n\n");
+//					for (int k = 0; k < getNumParents(i); k++) {
+//						buf.append(getNode(getParent(i, k))).append("\t");
+//					}
+//				}
+//
+//				for (int j = 0; j < getNumRows(i); j++) {
+//					buf.append("\n");
+//					for (int k = 0; k < getNumParents(i); k++) {
+//						buf.append(getParentValue(i, j, k));
+//
+//						if (k < getNumParents(i) - 1) {
+//							buf.append("\t");
+//						}
+//					}
+//
+//					if (getNumParents(i) > 0) {
+//						buf.append("\t");
+//					}
+//
+//					for (int k = 0; k < getNumColumns(i); k++) {
+//						buf.append(nf.format(getProbability(i, j, k))).append("\t");
+//					}
+//				}
+//			
+//
+//			buf.append("\n");
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//
+//		return buf.toString();
+//	}
     /**
      * Prints out the probability table for each variable.
      */

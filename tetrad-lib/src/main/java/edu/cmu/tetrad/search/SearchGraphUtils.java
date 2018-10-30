@@ -2588,7 +2588,73 @@ public final class SearchGraphUtils {
                 edgesAdded, edgesRemoved, edgesReorientedFrom, edgesReorientedTo,
                 counts);
     }
+    public static GraphUtils.GraphComparison getGraphComparison(Graph graph, Graph trueGraph, Map<Node, Boolean> context) {
+        graph = GraphUtils.replaceNodes(graph, trueGraph.getNodes());
 
+      
+        List<Edge> edgesAddedIS = new ArrayList<>();
+        List<Edge> edgesRemovedIS = new ArrayList<>();
+        List<Edge> edgesReorientedFromIS = new ArrayList<>();
+        List<Edge> edgesReorientedToIS = new ArrayList<>();
+        List<Edge> edgesAddedOther = new ArrayList<>();
+        List<Edge> edgesRemovedOther = new ArrayList<>();
+        List<Edge> edgesReorientedFromOther = new ArrayList<>();
+        List<Edge> edgesReorientedToOther = new ArrayList<>();
+
+        for (Edge edge : trueGraph.getEdges()) {
+            if (!graph.isAdjacentTo(edge.getNode1(), edge.getNode2())) {
+            	if (context.get(trueGraph.getNode(edge.getNode1().getName())) || context.get(trueGraph.getNode(edge.getNode2().getName()))){
+            		edgesRemovedIS.add(Edges.undirectedEdge(edge.getNode1(), edge.getNode2()));
+            	}
+            	else{
+            		edgesRemovedOther.add(Edges.undirectedEdge(edge.getNode1(), edge.getNode2()));
+            	}
+            }
+        }
+
+        for (Edge edge : graph.getEdges()) {
+            if (!trueGraph.isAdjacentTo(edge.getNode1(), edge.getNode2())) {
+            	if (context.get(trueGraph.getNode(edge.getNode1().getName())) || context.get(trueGraph.getNode(edge.getNode2().getName()))){
+            		edgesAddedIS.add(Edges.undirectedEdge(edge.getNode1(), edge.getNode2()));
+            	}
+            	else{
+                    edgesAddedOther.add(Edges.undirectedEdge(edge.getNode1(), edge.getNode2()));
+            	}
+            }
+        }
+
+        for (Edge edge : trueGraph.getEdges()) {
+            if (graph.containsEdge(edge)) {
+                continue;
+            }
+
+            Node node1 = edge.getNode1();
+            Node node2 = edge.getNode2();
+
+            for (Edge _edge : graph.getEdges(node1, node2)) {
+                if (edge.equals(_edge)) 
+                	continue;
+                else{
+                	if (context.get(trueGraph.getNode(edge.getNode1().getName())) || context.get(trueGraph.getNode(edge.getNode2().getName()))){
+                		edgesReorientedFromIS.add(edge);
+                		edgesReorientedToIS.add(_edge);
+                	}
+                	else{
+                		edgesReorientedFromOther.add(edge);
+                		edgesReorientedToOther.add(_edge);
+                	}
+                }
+            }
+        }
+        
+        int[][] counts = graphComparison(graph, trueGraph, null);
+
+        return new GraphUtils.GraphComparison(edgesAddedIS, edgesAddedOther, 
+				edgesRemovedIS, edgesRemovedOther,
+				edgesReorientedFromIS, edgesReorientedFromOther,
+				edgesReorientedToIS, edgesReorientedToOther,
+				counts);
+    }
     /**
      * Just counts arrowpoint errors--for cyclic edges counts an arrowpoint at each node.
      */

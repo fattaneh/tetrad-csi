@@ -20,6 +20,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 package edu.cmu.tetrad.graph;
 
+import edu.cmu.tetrad.bayes.ISMlBayesIm;
 import edu.cmu.tetrad.data.DataSet;
 import edu.cmu.tetrad.graph.Edge.Property;
 import edu.cmu.tetrad.graph.EdgeTypeProbability.EdgeType;
@@ -56,6 +57,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.RecursiveTask;
@@ -74,6 +76,43 @@ import nu.xom.Text;
  * @author Joseph Ramsey
  */
 public final class GraphUtils {
+	// added by Fattaneh
+		public static Graph getISGraph(Graph graph, ISMlBayesIm im, DataSet testCase, Map<Node, Boolean> context){
+			Graph isGraph = new EdgeListGraph(graph);
+
+			for (Node n : graph.getNodes()){
+				context.put(n, false);
+				for (Entry<List<Integer>, List<String>> csi : im.nodeCSI.get(n).entrySet()){
+					int nodeIndex = im.getNodeIndex(n);
+					List<Integer> isParents = new ArrayList<Integer>(csi.getKey());
+					List<String> isValues = new ArrayList<String>(csi.getValue());
+//					System.out.println("isParents" + isParents);
+//					System.out.println("is values" + isValues);
+					boolean all = true;
+					for (int i = 0; i < isParents.size(); i++){
+//						System.out.println("IS value: " + isValues.get(i) + ", testCase value: " + testCase.getInt(0, isParents.get(i)));
+						if (Integer.parseInt(isValues.get(i)) != testCase.getInt(0, isParents.get(i))){						
+							all = false;
+							break;
+						}
+					}				
+					if (all){
+//						System.out.println("node: " + n);
+						context.replace(n, all);
+//						System.out.println(csi);
+						int [] parents = im.getParents(nodeIndex);
+						for(int p = 0; p < parents.length; p++ ){
+							if (!isParents.contains(parents[p])){
+								isGraph.removeEdge(n, im.getNode(parents[p]));
+							}
+						}
+						break;
+					}
+				}
+			}
+			return isGraph;
+		}
+
 
     /**
      * Arranges the nodes in the graph in a circle.
@@ -4179,6 +4218,15 @@ public final class GraphUtils {
         private List<Edge> edgesReorientedFrom;
         private List<Edge> edgesReorientedTo;
 
+        private List<Edge> edgesAddedIS;
+		private List<Edge> edgesRemovedIS;
+		private List<Edge> edgesReorientedFromIS;
+		private List<Edge> edgesReorientedToIS;
+		private List<Edge> edgesAddedOther;
+		private List<Edge> edgesRemovedOther;
+		private List<Edge> edgesReorientedFromOther;
+		private List<Edge> edgesReorientedToOther;
+		
         public GraphComparison(int adjFn, int adjFp, int adjCorrect,
                 int arrowptFn, int arrowptFp, int arrowptCorrect,
                 double adjPrec, double adjRec, double arrowptPrec, double arrowptRec,
@@ -4211,6 +4259,25 @@ public final class GraphUtils {
 
             this.counts = counts;
         }
+        
+        public GraphComparison(List<Edge> edgesAddedIS, List<Edge> edgesAddedOther, 
+				List<Edge> edgesRemovedIS, List<Edge> edgesRemovedOther,
+				List<Edge> edgesReorientedFromIS, List<Edge> edgesReorientedFromOther,
+				List<Edge> edgesReorientedToIS, List<Edge> edgesReorientedToOther,
+				int[][] counts) {
+			
+			this.edgesAddedIS = edgesAddedIS;
+			this.edgesRemovedIS = edgesRemovedIS;
+			this.edgesReorientedFromIS = edgesReorientedFromIS;
+			this.edgesReorientedToIS = edgesReorientedToIS;
+			this.edgesAddedOther = edgesAddedOther;
+			this.edgesRemovedOther = edgesRemovedOther;
+			this.edgesReorientedFromOther = edgesReorientedFromOther;
+			this.edgesReorientedToOther = edgesReorientedToOther;
+
+
+			this.counts = counts;
+		}
 
         public int getAdjFn() {
             return adjFn;
@@ -4255,19 +4322,49 @@ public final class GraphUtils {
         public List<Edge> getEdgesAdded() {
             return edgesAdded;
         }
+        
+        public List<Edge> getEdgesAddedIS() {
+			return edgesAddedIS;
+		}
+		
+		public List<Edge> getEdgesAddedOther() {
+			return edgesAddedOther;
+		}
 
         public List<Edge> getEdgesRemoved() {
             return edgesRemoved;
         }
 
+        public List<Edge> getEdgesRemovedIS() {
+			return edgesRemovedIS;
+		}
+		public List<Edge> getEdgesRemovedOther() {
+			return edgesRemovedOther;
+		}
+		
         public List<Edge> getEdgesReorientedFrom() {
             return edgesReorientedFrom;
         }
 
+        public List<Edge> getEdgesReorientedFromIS() {
+			return edgesReorientedFromIS;
+		}
+		public List<Edge> getEdgesReorientedFromOther() {
+			return edgesReorientedFromOther;
+		}
+		
         public List<Edge> getEdgesReorientedTo() {
             return edgesReorientedTo;
         }
+        
+        public List<Edge> getEdgesReorientedToIS() {
+			return edgesReorientedToIS;
+		}
+		public List<Edge> getEdgesReorientedToOther() {
+			return edgesReorientedToOther;
+		}
 
+        
         public double getAdjPrec() {
             return adjPrec;
         }
