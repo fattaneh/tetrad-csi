@@ -22,8 +22,8 @@ public class TestISFges_CN {
 		String workingDirectory = System.getProperty("user.dir");
 		System.out.println(workingDirectory);
 
-		Path trainDataFile = Paths.get("/Users/fattanehjabbari/CCD-Project/CS-BN/causal_news/train.csv");
-		Path testDataFile = Paths.get("/Users/fattanehjabbari/CCD-Project/CS-BN/causal_news/test.csv");
+		Path trainDataFile = Paths.get("./train.csv");
+		Path testDataFile = Paths.get("./test.csv");
 
 		char delimiter = ',';
 
@@ -187,16 +187,7 @@ public class TestISFges_CN {
 		return new returnObject(instanceGraphs, dagP, probabilities);
 	}
 }
-class returnObject{
-	public final List<Graph> instanceGraphs ;
-	public final Graph populationGraph;
-	public final double[][] probabilities;
-	public returnObject(final List<Graph> instanceGraphs, final Graph populationGraph, double[][] probabilities) {
-		this.instanceGraphs = instanceGraphs;
-		this.populationGraph = populationGraph;
-		this.probabilities = probabilities;
-	}
-}
+
 class Key {
 
 	public final int n_a;

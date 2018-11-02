@@ -42,7 +42,7 @@ public class TestISFges {
 	public void testSimulation(){
 		RandomUtil.getInstance().setSeed(1454147770L);
 		int[] numVarss = new int[]{50};
-		double[] edgesPerNodes = new double[]{1.0, 2.0};
+		double[] edgesPerNodes = new double[]{2.0};
 		int numCases = 1000;
 		int numTests = 500;
 		int minCat = 2;
@@ -75,7 +75,7 @@ public class TestISFges {
 				double[] avgcsi = new double[numSim];
 				double samplePrior = 10.0;
 				try {
-		            File dir = new File("/Users/fattanehjabbari/CCD-Project/CS-BN/simulation-newprior/");
+		            File dir = new File("/Users/fattanehjabbari/CCD-Project/CS-BN/simulation-newprior/PESS"+samplePrior+"/");
 		            
 		            dir.mkdirs();
 		            String outputFileName = "V"+numVars +"-E"+ edgesPerNode +"-kadd" + k_add+"-kdel" + k_delete+"-krev" + k_reverse+ "-PESS" + samplePrior+"-np.csv";

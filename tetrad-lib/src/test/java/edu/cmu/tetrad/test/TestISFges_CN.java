@@ -18,7 +18,7 @@ import edu.cmu.tetrad.util.DelimiterUtils;
 import edu.pitt.dbmi.data.reader.tabular.TabularDataReader;
 import edu.pitt.dbmi.data.reader.tabular.VerticalDiscreteTabularDataReader;
 import edu.cmu.tetrad.data.*;
-
+import edu.cmu.tetrad.search.returnObject;
 public class TestISFges_CN {
 	
 	public static void main(String[] args) {
@@ -188,15 +188,5 @@ public class TestISFges_CN {
 //		}
 //		System.out.println(average/testData.getNumRows());
 		return new returnObject(instanceGraphs, dagP, probabilities);
-	}
-}
-class returnObject{
-	public final List<Graph> instanceGraphs ;
-	public final Graph populationGraph;
-	public final double[][] probabilities;
-	public returnObject(final List<Graph> instanceGraphs, final Graph populationGraph, double[][] probabilities) {
-		this.instanceGraphs = instanceGraphs;
-		this.populationGraph = populationGraph;
-		this.probabilities = probabilities;
 	}
 }
