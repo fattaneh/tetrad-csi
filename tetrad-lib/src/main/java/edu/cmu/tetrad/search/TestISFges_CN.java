@@ -41,7 +41,8 @@ public class TestISFges_CN {
 		
 		int[][] trainDataArray = dataSetToArray(trainData);
 		int[][] testDataArray = dataSetToArray(testData);
-
+		System.out.println("trainData size: " + trainDataArray.length);
+		System.out.println("trainData size: " + trainDataArray[0].length);
 		returnObject ro = tcn.runIFGES(trainDataArray, testDataArray, 0.1);
 		System.out.println(ro.instanceGraphs.size());
 		System.out.println(Arrays.deepToString(ro.probabilities));
