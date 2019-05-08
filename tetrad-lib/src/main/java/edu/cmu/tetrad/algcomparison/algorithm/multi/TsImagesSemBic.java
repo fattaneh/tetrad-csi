@@ -47,6 +47,7 @@ public class TsImagesSemBic implements MultiDataSetAlgorithm, HasKnowledge {
                     new SemBicScoreImages(dataModels)), new SemBicScoreImages(dataModels));
             search.setFaithfulnessAssumed(true);
             search.setKnowledge(knowledge);
+            search.setVerbose(parameters.getBoolean("verbose"));
 
             return search.search();
     	}else{
@@ -142,6 +143,7 @@ public class TsImagesSemBic implements MultiDataSetAlgorithm, HasKnowledge {
         parameters.add("resamplingWithReplacement");
         parameters.add("resamplingEnsemble");
         parameters.add("addOriginalDataset");
+
   		parameters.add("verbose");
   		
         return parameters;

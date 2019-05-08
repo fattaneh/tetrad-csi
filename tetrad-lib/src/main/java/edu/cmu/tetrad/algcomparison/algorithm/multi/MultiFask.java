@@ -29,7 +29,8 @@ import java.util.List;
 @edu.cmu.tetrad.annotation.Algorithm(
         name = "MultiFask",
         command = "multi-fask",
-        algoType = AlgType.forbid_latent_common_causes
+        algoType = AlgType.forbid_latent_common_causes,
+        dataType = DataType.Continuous
 )
 public class MultiFask implements MultiDataSetAlgorithm, HasKnowledge {
 
@@ -145,6 +146,8 @@ public class MultiFask implements MultiDataSetAlgorithm, HasKnowledge {
         parameters.add("resamplingWithReplacement");
         parameters.add("resamplingEnsemble");
         parameters.add("addOriginalDataset");
+
+        parameters.remove("verbose");
         parameters.add("verbose");
 
         return parameters;

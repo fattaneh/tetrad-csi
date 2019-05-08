@@ -17,7 +17,6 @@ import edu.cmu.tetrad.search.SearchGraphUtils;
 import edu.cmu.tetrad.util.Parameters;
 import edu.pitt.dbmi.algo.resampling.GeneralResamplingTest;
 import edu.pitt.dbmi.algo.resampling.ResamplingEdgeEnsemble;
-
 import java.util.List;
 
 /**
@@ -26,7 +25,7 @@ import java.util.List;
  * @author jdramsey
  */
 @edu.cmu.tetrad.annotation.Algorithm(
-        name = "Variants of PC",
+        name = "PC Variants",
         command = "pc-all",
         algoType = AlgType.forbid_latent_common_causes
 )
@@ -174,6 +173,7 @@ public class PcAll implements Algorithm, TakesInitialGraph, HasKnowledge, TakesI
         parameters.add("resamplingWithReplacement");
         parameters.add("resamplingEnsemble");
         parameters.add("addOriginalDataset");
+
         parameters.add("verbose");
         return parameters;
     }
@@ -206,6 +206,11 @@ public class PcAll implements Algorithm, TakesInitialGraph, HasKnowledge, TakesI
     @Override
     public void setIndependenceWrapper(IndependenceWrapper test) {
         this.test = test;
+    }
+    
+    @Override
+    public IndependenceWrapper getIndependenceWrapper() {
+        return test;
     }
 
 }

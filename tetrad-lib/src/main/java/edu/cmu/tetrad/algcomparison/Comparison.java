@@ -42,7 +42,6 @@ import edu.cmu.tetrad.algcomparison.utils.HasParameters;
 import edu.cmu.tetrad.algcomparison.utils.TakesInitialGraph;
 import edu.cmu.tetrad.data.*;
 import edu.cmu.tetrad.graph.*;
-import edu.cmu.tetrad.search.DagToPag;
 import edu.cmu.tetrad.search.DagToPag2;
 import edu.cmu.tetrad.search.SearchGraphUtils;
 import edu.cmu.tetrad.util.*;
@@ -65,7 +64,7 @@ import java.util.concurrent.RecursiveTask;
 public class Comparison {
 
 
-        public enum ComparisonGraph {true_DAG, Pattern_of_the_true_DAG, PAG_of_the_true_DAG}
+    public enum ComparisonGraph {true_DAG, Pattern_of_the_true_DAG, PAG_of_the_true_DAG}
 
     private boolean[] graphTypeUsed;
     private PrintStream out;
@@ -458,7 +457,7 @@ public class Comparison {
         //int i = 0;
 
         dir = new File(dir0, "save");
-        
+
 //
 //        do {
 //            dir = new File(dir0, "Simulation" + (++i));
@@ -475,25 +474,25 @@ public class Comparison {
         //if(!dir.exists()){
         //	dir.mkdirs();
         //}
-        
+
         try {
-	    	int numDataSets = simulation.getNumDataModels();
-	    	if(numDataSets <= 0){
-	    		
-	    		File dir1 = new File(dir, "graph");
-	            File dir2 = new File(dir, "data");
-	
-	            dir1.mkdirs();
-	            dir2.mkdirs();
-	            
-	    		PrintStream out = new PrintStream(new FileOutputStream(new File(dir, "parameters.txt")));
-	            out.println(simulation.getDescription());
-	            out.println(parameters);
-	            out.close();
-	            
-	    		return;
-	    	}
-	        List<SimulationWrapper> simulationWrappers = getSimulationWrappers(simulation, parameters);
+            int numDataSets = simulation.getNumDataModels();
+            if(numDataSets <= 0){
+
+                File dir1 = new File(dir, "graph");
+                File dir2 = new File(dir, "data");
+
+                dir1.mkdirs();
+                dir2.mkdirs();
+
+                PrintStream out = new PrintStream(new FileOutputStream(new File(dir, "parameters.txt")));
+                out.println(simulation.getDescription());
+                out.println(parameters);
+                out.close();
+
+                return;
+            }
+            List<SimulationWrapper> simulationWrappers = getSimulationWrappers(simulation, parameters);
 
             int index = 0;
 
@@ -512,7 +511,7 @@ public class Comparison {
                     subdir.mkdirs();
                 }
 
-            	File dir1 = new File(subdir, "graph");
+                File dir1 = new File(subdir, "graph");
                 File dir2 = new File(subdir, "data");
 
                 dir1.mkdirs();
@@ -560,6 +559,88 @@ public class Comparison {
                 out.println(simulationWrapper.getDescription());
                 out.println(simulationWrapper.getSimulationSpecificParameters());
                 out.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Saves simulationWrapper data.
+     *
+     * @param dataPath   The path to the directory where the simulationWrapper data should be saved.
+     * @param simulation The simulate used to generate the graphs and data.
+     * @param parameters The parameters to be used in the simulationWrapper.
+     */
+    public void saveToFilesSingleSimulation(String dataPath, Simulation simulation, Parameters parameters) {
+        File dir0 = new File(dataPath);
+        File dir = new File(dir0, "save");
+
+        deleteFilesThenDirectory(dir);
+        dir.mkdirs();
+
+        try {
+            PrintStream _out = new PrintStream(new FileOutputStream(new File(dir, "parameters.txt")));
+            _out.println(simulation.getDescription());
+            _out.println(parameters);
+            _out.close();
+
+            int numDataSets = simulation.getNumDataModels();
+            if (numDataSets <= 0) {
+
+                File dir1 = new File(dir, "graph");
+                File dir2 = new File(dir, "data");
+
+                dir1.mkdirs();
+                dir2.mkdirs();
+
+                return;
+            }
+
+            File subdir = dir;
+
+            File dir1 = new File(subdir, "graph");
+            File dir2 = new File(subdir, "data");
+
+            dir1.mkdirs();
+            dir2.mkdirs();
+
+            File dir3 = null;
+
+            if (isSavePatterns()) {
+                dir3 = new File(subdir, "patterns");
+                dir3.mkdirs();
+            }
+
+            File dir4 = null;
+
+            if (isSavePags()) {
+                dir4 = new File(subdir, "pags");
+                dir4.mkdirs();
+            }
+
+
+            for (int j = 0; j < simulation.getNumDataModels(); j++) {
+                File file2 = new File(dir1, "graph." + (j + 1) + ".txt");
+                Graph graph = simulation.getTrueGraph(j);
+
+                GraphUtils.saveGraph(graph, file2, false);
+
+                File file = new File(dir2, "data." + (j + 1) + ".txt");
+                Writer out = new FileWriter(file);
+                DataModel dataModel = simulation.getDataModel(j);
+                DataWriter.writeRectangularData((DataSet) dataModel, out, '\t');
+                out.close();
+
+                if (isSavePatterns()) {
+                    File file3 = new File(dir3, "pattern." + (j + 1) + ".txt");
+                    GraphUtils.saveGraph(SearchGraphUtils.patternForDag(graph), file3, false);
+                }
+
+                if (isSavePags()) {
+                    File file4 = new File(dir4, "pag." + (j + 1) + ".txt");
+                    GraphUtils.saveGraph(new DagToPag2(graph).convert(), file4, false);
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -1095,7 +1176,7 @@ public class Comparison {
     }
 
     private void printParameters(List<String> names, Parameters parameters, PrintStream out) {
-    	out.println("Comparison.printParameters");
+        out.println("Comparison.printParameters");
         ParamDescriptions descriptions = ParamDescriptions.getInstance();
 
         for (String name : names) {
@@ -1104,14 +1185,14 @@ public class Comparison {
             Object value = parameters.get(name);
 
             if (defaultValue instanceof Double) {
-                out.println(description.getDescription() + " = " + value.toString());
+                out.println(description.getShortDescription() + " = " + value.toString());
             } else if (defaultValue instanceof Integer) {
-                out.println(description.getDescription() + " = " + value.toString());
+                out.println(description.getShortDescription() + " = " + value.toString());
             } else if (defaultValue instanceof Boolean) {
                 boolean b = (Boolean) value;
-                out.println(description.getDescription() + " = " + (b ? "Yes" : "No"));
+                out.println(description.getShortDescription() + " = " + (b ? "Yes" : "No"));
             } else if (defaultValue instanceof String) {
-                out.println(description.getDescription() + " = " + value);
+                out.println(description.getShortDescription() + " = " + value);
             }
         }
     }
@@ -1229,7 +1310,7 @@ public class Comparison {
         } else if (this.comparisonGraph == ComparisonGraph.Pattern_of_the_true_DAG) {
             comparisonGraph = SearchGraphUtils.patternForDag(new EdgeListGraph(trueGraph));
         } else if (this.comparisonGraph == ComparisonGraph.PAG_of_the_true_DAG) {
-            comparisonGraph = new DagToPag(new EdgeListGraph(trueGraph)).convert();
+            comparisonGraph = new DagToPag2(new EdgeListGraph(trueGraph)).convert();
         } else {
             throw new IllegalArgumentException("Unrecognized graph type.");
         }
@@ -1582,7 +1663,11 @@ public class Comparison {
         Collections.sort(order, new Comparator<Integer>() {
             @Override
             public int compare(Integer o1, Integer o2) {
-                return -Double.compare(_utilities[o1], _utilities[o2]);
+                double u1 = _utilities[o1];
+                double u2 = _utilities[o2];
+                if (Double.isNaN(u1)) u1 = 0.0;
+                if (Double.isNaN(u2)) u2 = 0.0;
+                return -Double.compare(u1, u2);
             }
         });
 

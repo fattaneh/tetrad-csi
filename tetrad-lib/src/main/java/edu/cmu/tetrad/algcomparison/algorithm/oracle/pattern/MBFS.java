@@ -18,7 +18,6 @@ import edu.cmu.tetrad.search.IndependenceTest;
 import edu.cmu.tetrad.util.Parameters;
 import edu.pitt.dbmi.algo.resampling.GeneralResamplingTest;
 import edu.pitt.dbmi.algo.resampling.ResamplingEdgeEnsemble;
-
 import java.util.List;
 
 /**
@@ -122,6 +121,7 @@ public class MBFS implements Algorithm, HasKnowledge, TakesIndependenceWrapper {
         parameters.add("resamplingWithReplacement");
         parameters.add("resamplingEnsemble");
         parameters.add("addOriginalDataset");
+
         parameters.add("verbose");
         return parameters;
     }
@@ -139,5 +139,10 @@ public class MBFS implements Algorithm, HasKnowledge, TakesIndependenceWrapper {
     @Override
     public void setIndependenceWrapper(IndependenceWrapper test) {
         this.test = test;
+    }
+    
+    @Override
+    public IndependenceWrapper getIndependenceWrapper() {
+        return test;
     }
 }

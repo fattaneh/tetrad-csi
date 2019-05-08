@@ -130,13 +130,15 @@ public class FgesMb implements Algorithm, TakesInitialGraph, HasKnowledge, UsesS
         parameters.add("targetName");
         parameters.add("faithfulnessAssumed");
         parameters.add("maxDegree");
-        parameters.add("verbose");
 
         // Resampling
         parameters.add("numberResampling");
         parameters.add("percentResampleSize");
         parameters.add("resamplingWithReplacement");
         parameters.add("resamplingEnsemble");
+
+        parameters.add("verbose");
+
 
         return parameters;
     }
@@ -169,6 +171,11 @@ public class FgesMb implements Algorithm, TakesInitialGraph, HasKnowledge, UsesS
     @Override
     public void setScoreWrapper(ScoreWrapper score) {
         this.score = score;
+    }
+    
+    @Override
+    public ScoreWrapper getScoreWarpper() {
+        return score;
     }
 
 }

@@ -111,6 +111,7 @@ public class FAS implements Algorithm, HasKnowledge, TakesIndependenceWrapper {
         parameters.add("resamplingWithReplacement");
         parameters.add("resamplingEnsemble");
         parameters.add("addOriginalDataset");
+
         parameters.add("verbose");
         return parameters;
     }
@@ -130,4 +131,8 @@ public class FAS implements Algorithm, HasKnowledge, TakesIndependenceWrapper {
         this.test = test;
     }
 
+    @Override
+    public IndependenceWrapper getIndependenceWrapper() {
+        return test;
+    }
 }

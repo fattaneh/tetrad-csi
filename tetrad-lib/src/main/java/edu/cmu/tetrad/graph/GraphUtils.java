@@ -54,6 +54,7 @@ import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -125,12 +126,7 @@ public final class GraphUtils {
             return;
         }
         List<Node> nodes = graph.getNodes();
-
-        Collections.sort(nodes, new Comparator<Node>() {
-            public int compare(Node o1, Node o2) {
-                return o1.getName().compareTo(o2.getName());
-            }
-        });
+        Collections.sort(nodes);
 
         double rad = 6.28 / nodes.size();
         double phi = .75 * 6.28;    // start from 12 o'clock.
@@ -731,7 +727,7 @@ public final class GraphUtils {
     }
 
     // JMO's method for fixing latents
-    private static void fixLatents4(int numLatentConfounders, Graph graph) {
+    public static void fixLatents4(int numLatentConfounders, Graph graph) {
         if (numLatentConfounders == 0) {
             return;
         }
@@ -2637,7 +2633,7 @@ public final class GraphUtils {
         Graph graph = new EdgeListGraph();
 
         while (!(line = in.readLine().trim()).equals("")) {
-            String[] tokens = line.split(",");
+            String[] tokens = line.split(";");
 
             for (String token : tokens) {
                 graph.addNode(new GraphNode(token));
@@ -3106,6 +3102,8 @@ public final class GraphUtils {
         for (Edge edge : graph.getEdges(node1)) {
             Node child = Edges.traverseDirected(node1, edge);
 
+            if (graph.getEdges(node1, child).size() == 2) return true;
+
             if (child == null) {
                 continue;
             }
@@ -3143,6 +3141,9 @@ public final class GraphUtils {
             Node t = Q.remove();
 
             for (Node u : G.getAdjacentNodes(t)) {
+                if (G.isParentOf(t, u) && G.isParentOf(u, t)) {
+                    return true;
+                }
                 Edge edge = G.getEdge(t, u);
                 Node c = Edges.traverseDirected(t, edge);
 
@@ -4068,8 +4069,20 @@ public final class GraphUtils {
         }
 
         Formatter fmt = new Formatter();
-        fmt.format("%s%n%n", graphNodesToText(graph, "Graph Nodes:", ','));
-        fmt.format("%s", graphEdgesToText(graph, "Graph Edges:"));
+        fmt.format("%s%n%n", graphNodesToText(graph, "Graph Nodes:", ';'));
+        fmt.format("%s%n", graphEdgesToText(graph, "Graph Edges:"));
+        
+        // Graph Attributes
+        String graphAttributes = graphAttributesToText(graph, "Graph Attributes:");
+        if(graphAttributes != null) {
+        	fmt.format("%s%n", graphAttributes);
+        }
+        
+        // Nodes Attributes
+        String graphNodeAttributes = graphNodeAttributesToText(graph, "Graph Node Attributes:", ';');
+        if(graphNodeAttributes != null) {
+        	fmt.format("%s%n", graphNodeAttributes);
+        }
 
         Set<Triple> ambiguousTriples = graph.getAmbiguousTriples();
         if (!ambiguousTriples.isEmpty()) {
@@ -4089,6 +4102,86 @@ public final class GraphUtils {
         return fmt.toString();
     }
 
+    public static String graphNodeAttributesToText(Graph graph, String title, char delimiter) {
+        List<Node> nodes = graph.getNodes();
+        
+        Map<String, Map<String, Object>> graphNodeAttributes = new LinkedHashMap<>();
+        for (Node node : nodes) {
+            Map<String, Object> attributes = node.getAllAttributes();
+            
+            if(!attributes.isEmpty()) {
+            	for(String key : attributes.keySet()) {
+            		Object value = attributes.get(key);
+            		
+            		Map<String, Object> nodeAttributes = graphNodeAttributes.get(key);
+            		if(nodeAttributes == null) {
+            			nodeAttributes = new LinkedHashMap<>();
+            		}
+            		nodeAttributes.put(node.getName(), value);
+            		
+            		graphNodeAttributes.put(key, nodeAttributes);
+            	}
+            }
+        } 
+
+        if(!graphNodeAttributes.isEmpty()) {
+        	StringBuilder sb = (title == null || title.length() == 0)
+                    ? new StringBuilder()
+                    : new StringBuilder(String.format("%s", title));
+            
+            for(String key : graphNodeAttributes.keySet()) {
+            	Map<String, Object> nodeAttributes = graphNodeAttributes.get(key);
+                int size = nodeAttributes.size();
+                int count = 0;
+                
+                sb.append(String.format("%n%s: [", key));
+                
+                for(String nodeName : nodeAttributes.keySet()) {
+                	Object value = nodeAttributes.get(nodeName);
+                	
+                	sb.append(String.format("%s: %f", nodeName, value));
+                	
+                	count++;
+                	
+                	if(count < size) {
+                		sb.append(delimiter);
+                	}
+                	
+                }
+            	
+                sb.append("]");
+            }
+                    
+        	
+            return sb.toString();
+        }
+        
+
+    	
+    	return null;
+    }
+    
+    public static String graphAttributesToText(Graph graph, String title) {
+        Map<String,Object> attributes = graph.getAllAttributes();
+        if(!attributes.isEmpty()) {
+        	StringBuilder sb = (title == null || title.length() == 0)
+                    ? new StringBuilder()
+                    : new StringBuilder(String.format("%s%n", title));
+                    
+        	for(String key : attributes.keySet()) {
+        		Object value = attributes.get(key);
+        		
+        		sb.append(key);
+        		sb.append(": ");
+        		sb.append(String.format("%f%n", value));
+        	}
+
+        	return sb.toString();
+        }
+    	
+    	return null;
+    }
+    
     public static String graphNodesToText(Graph graph, String title, char delimiter) {
         StringBuilder sb = (title == null || title.length() == 0)
                 ? new StringBuilder()

@@ -32,6 +32,7 @@ import edu.cmu.tetrad.util.TetradMatrix;
 import edu.pitt.dbmi.algo.bayesian.constraint.inference.BCInference;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,12 +48,13 @@ public class IndTestProbabilistic implements IndependenceTest {
      * Calculates probabilities of independence for conditional independence facts.
      */
     private final BCInference bci;
+    // Not
+    private boolean threshold = false;
 
     /**
      * The data set for which conditional  independence judgments are requested.
      */
     private final DataSet data;
-    private final DataSet test;
 
     /**
      * The nodes of the data set.
@@ -69,27 +71,28 @@ public class IndTestProbabilistic implements IndependenceTest {
      */
     private Map<IndependenceFact, Double> H;
     private double posterior;
-
     private boolean verbose = false;
+    
+    private double cutoff = 0.5;
 
+    //==========================CONSTRUCTORS=============================//
     /**
      * Initializes the test using a discrete data sets.
      */
-    public IndTestProbabilistic(DataSet dataSet, DataSet test) {
+    public IndTestProbabilistic(DataSet dataSet) {
         if (!dataSet.isDiscrete()) {
             throw new IllegalArgumentException("Not a discrete data set.");
 
         }
 
         this.data = dataSet;
-        this.test = test;
 
         int[] nodeDimensions = new int[dataSet.getNumColumns() + 2];
 
         for (int j = 0; j < dataSet.getNumColumns(); j++) {
             DiscreteVariable variable = (DiscreteVariable) (dataSet.getVariable(j));
             int numCategories = variable.getNumCategories();
-            System.out.println("Variable " + variable + " # cat = " + numCategories);
+//            System.out.println("Variable " + variable + " # cat = " + numCategories);
             nodeDimensions[j + 1] = numCategories;
         }
 
@@ -129,36 +132,27 @@ public class IndTestProbabilistic implements IndependenceTest {
     public boolean isIndependent(Node x, Node y, Node... z) {
         IndependenceFact key = new IndependenceFact(x, y, z);
 
+        double pInd = Double.NaN;
+        
         if (!H.containsKey(key)) {
-            double pInd = probConstraint(BCInference.OP.independent, x, y, z);
+            pInd = probConstraint(BCInference.OP.independent, x, y, z);
             H.put(key, pInd);
+        }else {
+        	pInd = H.get(key);
         }
-
-        double pInd = H.get(key);
 
         double p = probOp(BCInference.OP.independent, pInd);
 
         this.posterior = p;
 
-        boolean ind = RandomUtil.getInstance().nextDouble() < p;
+        boolean ind ;
+        if (this.threshold){
+        	ind = (p >= cutoff);
+        }
+        else{
+        	ind = RandomUtil.getInstance().nextDouble() < p;
+        }
 
-//        System.out.print((nodes.indexOf(x) + 1) + " ");
-//        System.out.print((nodes.indexOf(y) + 1) + (z.length > 0 ? " " : ""));
-
-//        for (int i = 0; i < z.length; i++) {
-//            System.out.print(nodes.indexOf(z[i]) + 1);
-//
-//            if (i < z.length - 1) {
-//                System.out.print(" ");
-//            }
-//        }
-//
-//        System.out.print(",");
-//        System.out.print(ind ? 1 : 0 + ",");
-//        System.out.print(p);
-//
-//        System.out.println();
-		System.out.println(key + ": " + pInd);
         if (ind) {
             return true;
         } else {
@@ -166,6 +160,7 @@ public class IndTestProbabilistic implements IndependenceTest {
         }
     }
 
+   
     public double probConstraint(BCInference.OP op, Node x, Node y, Node[] z) {
 
         int _x = indices.get(x) + 1;
@@ -176,8 +171,6 @@ public class IndTestProbabilistic implements IndependenceTest {
         for (int i = 0; i < z.length; i++) {
             _z[i + 1] = indices.get(z[i]) + 1;
         }
-
-//        System.out.println("test " + _x + " _||_ " + _y + " | " + Arrays.toString(_z));
 
         return bci.probConstraint(op, _x, _y, _z);
     }
@@ -296,6 +289,18 @@ public class IndTestProbabilistic implements IndependenceTest {
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
     }
+
+	/**
+	 * @param noRandomizedGeneratingConstraints
+	 */
+	public void setThreshold(boolean noRandomizedGeneratingConstraints) {
+		this.threshold = noRandomizedGeneratingConstraints;
+	}
+
+	public void setCutoff(double cutoff) {
+		this.cutoff = cutoff;
+	}
 }
+
 
 

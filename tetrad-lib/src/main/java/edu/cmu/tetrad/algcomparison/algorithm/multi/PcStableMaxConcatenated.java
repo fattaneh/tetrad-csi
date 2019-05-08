@@ -55,6 +55,7 @@ public class PcStableMaxConcatenated implements MultiDataSetAlgorithm, HasKnowle
             search.setMaxPathLength(parameters.getInt("maxPOrientationMaxPathLength"));
             search.setKnowledge(knowledge);
             search.setDepth(parameters.getInt("depth"));
+            search.setVerbose(parameters.getBoolean("verbose"));
             return search.search();
     	}else{
     		PcStableMaxConcatenated pcStableMaxConcatenated = new PcStableMaxConcatenated(test, compareToTrue);
@@ -160,6 +161,7 @@ public class PcStableMaxConcatenated implements MultiDataSetAlgorithm, HasKnowle
         parameters.add("resamplingWithReplacement");
         parameters.add("resamplingEnsemble");
         parameters.add("addOriginalDataset");
+
   		parameters.add("verbose");
   		
         return parameters;
