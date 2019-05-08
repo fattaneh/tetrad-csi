@@ -179,7 +179,7 @@ public final class Fges implements GraphSearch, GraphScorer {
     // for each edge with the maximum score chosen.
     private boolean symmetricFirstStep = false;
 
-    final int maxThreads = 10 * ForkJoinPoolInstance.getInstance().getPool().getParallelism();
+    final int maxThreads = 1;//10 * ForkJoinPoolInstance.getInstance().getPool().getParallelism();
 
     //===========================CONSTRUCTORS=============================//
     /**
@@ -924,19 +924,26 @@ public final class Fges implements GraphSearch, GraphScorer {
 
         while (!sortedArrows.isEmpty()) {
             Arrow arrow = sortedArrows.first();
+//        	System.out.println("FES sortedArrows: " +  sortedArrows);
+
             sortedArrows.remove(arrow);
 
             Node x = arrow.getA();
             Node y = arrow.getB();
 
             if (graph.isAdjacentTo(x, y)) {
+//            	System.out.println("isAdjacentTo(x, y)!");
+
                 continue;
             }
 
             if (graph.getDegree(x) > maxDegree - 1) {
+//            	System.out.println("getDegree(x) > maxDegree - 1!");
+
                 continue;
             }
             if (graph.getDegree(y) > maxDegree - 1) {
+//            	System.out.println("getDegree(y) > maxDegree - 1!");
                 continue;
             }
 
@@ -945,10 +952,14 @@ public final class Fges implements GraphSearch, GraphScorer {
             }
 
             if (!getTNeighbors(x, y).containsAll(arrow.getHOrT())) {
+//            	System.out.println("!getTNeighbors(x, y).containsAll(arrow.getHOrT())");
+
                 continue;
             }
 
             if (!validInsert(x, y, arrow.getHOrT(), getNaYX(x, y))) {
+//            	System.out.println("!validInsert(x, y, arrow.getHOrT(), getNaYX(x, y))");
+
                 continue;
             }
 
@@ -956,7 +967,14 @@ public final class Fges implements GraphSearch, GraphScorer {
             double bump = arrow.getBump();
 
             boolean inserted = insert(x, y, T, bump);
+//            if (inserted){
+//            	System.out.println("insert:" + graph.getEdges());
+//                System.out.println("x:" + x);
+//                System.out.println("y:" + y);
+//                System.out.println("bump:" + bump);
+//            }
             if (!inserted) {
+//            	System.out.println("not inserted");
                 continue;
             }
 
@@ -994,6 +1012,8 @@ public final class Fges implements GraphSearch, GraphScorer {
         initializeArrowsBackward();
 
         while (!sortedArrows.isEmpty()) {
+//        	System.out.println("BES sortedArrows: " +  sortedArrows);
+
             Arrow arrow = sortedArrows.first();
             sortedArrows.remove(arrow);
 
@@ -1679,6 +1699,7 @@ public final class Fges implements GraphSearch, GraphScorer {
         union.addAll(naYX);
         boolean clique = isClique(union);
         boolean noCycle = !existsUnblockedSemiDirectedPath(y, x, union, cycleBound);
+//        System.out.println("clique && noCycle && !violatesKnowledge: " + clique +", "+ noCycle +","+ !violatesKnowledge);
         return clique && noCycle && !violatesKnowledge;
     }
 
@@ -1949,6 +1970,8 @@ public final class Fges implements GraphSearch, GraphScorer {
 
         if (lookupArrows != null) {
             sortedArrows.removeAll(lookupArrows);
+//        	System.out.println("clear arrow ---- sortedArrows: " +  sortedArrows);
+
         }
 
         this.lookupArrows.remove(pair);

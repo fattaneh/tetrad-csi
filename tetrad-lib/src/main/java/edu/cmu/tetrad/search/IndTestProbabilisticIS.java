@@ -39,9 +39,9 @@ import java.util.Map;
 /**
  * Uses BCInference by Cooper and Bui to calculate probabilistic conditional independence judgments.
  *
- * @author Joseph Ramsey 3/2014
+ * @author Fattaneh 1/2019
  */
-public class IndTestProbabilistic implements IndependenceTest {
+public class IndTestProbabilisticIS implements IndependenceTest {
 
     /**
      * Calculates probabilities of independence for conditional independence facts.
@@ -75,7 +75,7 @@ public class IndTestProbabilistic implements IndependenceTest {
     /**
      * Initializes the test using a discrete data sets.
      */
-    public IndTestProbabilistic(DataSet dataSet, DataSet test) {
+    public IndTestProbabilisticIS(DataSet dataSet, DataSet test) {
         if (!dataSet.isDiscrete()) {
             throw new IllegalArgumentException("Not a discrete data set.");
 
@@ -127,6 +127,7 @@ public class IndTestProbabilistic implements IndependenceTest {
 
     @Override
     public boolean isIndependent(Node x, Node y, Node... z) {
+//      bci = new BCInference(cases, nodeDimensions);
         IndependenceFact key = new IndependenceFact(x, y, z);
 
         if (!H.containsKey(key)) {

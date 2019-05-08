@@ -275,6 +275,3 @@ public class BDeuScore implements LocalDiscreteScore, IBDeuScore, Score {
         return false;
     }
 }
-
-
-

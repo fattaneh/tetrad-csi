@@ -59,8 +59,28 @@ public class TestISFges_CN {
 		}
 		return data;
 	}	
+	private static int[][] flipMatrix(int[][] matrix) {
+		int rows = matrix.length;
+		int cols = matrix[0].length;
+
+		int[][] data = new int[cols][rows];
+
+		for (int j = 0; j < cols; j++) {
+			data[j] = new int[rows];
+
+			for (int i = 0; i < rows; i++) {
+				data[j][i] = matrix[i][j];
+			}
+		}
+		return data;
+	}
+
 	public returnObject runIFGES(int[][] trainMatrix, int[][] testMatrix, double kappa) {
 		System.out.println("--------- start ---------");
+		
+		trainMatrix = flipMatrix(trainMatrix);
+		testMatrix = flipMatrix(testMatrix);
+		
 		int numVars = trainMatrix.length;
 //		System.out.println("numVars: " + numVars);
 		List<Node> variables = new ArrayList<>();

@@ -120,7 +120,16 @@ public final class DirichletEstimator {
                     double priorValue = prior.getPseudocount(n, row, i);
                     double value = nCount[i] + priorValue;
                     posterior.setPseudocount(n, row, i, value);
+//                    if (n==514){
+//                    	System.out.println("prior: "+ priorValue);
+//                    	System.out.println("nCount: "+ nCount[i]);
+//                    	System.out.println("posterior: "+ value);
+//
+//                    }
                 }
+//                if (n==514){
+//                System.out.println("-----------");
+//                }
             }
         }
 

@@ -97,7 +97,7 @@ public class TestGeneralResamplingTest {
 		LargeScaleSimulation simulator = new LargeScaleSimulation(dag, dag.getNodes(), causalOrdering);
 
 		DataSet data = simulator.simulateDataFisher(numCases);
-
+		System.out.println(data);
 		Parameters parameters = new Parameters();
 		parameters.set("penaltyDiscount", penaltyDiscount);
 		parameters.set("faithfulnessAssumed", faithfulnessAssumed);

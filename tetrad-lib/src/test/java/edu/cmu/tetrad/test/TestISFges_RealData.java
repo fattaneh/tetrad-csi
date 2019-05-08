@@ -64,7 +64,7 @@ public class TestISFges_RealData {
 
 		// learn the population model
 		BDeuScore scoreP = new BDeuScore(trainData);
-		scoreP.setSamplePrior(1.0);
+		scoreP.setSamplePrior(10.0);
 		Fges fgesP = new Fges (scoreP);
 		fgesP.setKnowledge(knowledge);
 		Graph graphP = fgesP.search();
@@ -80,10 +80,10 @@ public class TestISFges_RealData {
 
 		DirichletBayesIm priorP = DirichletBayesIm.symmetricDirichletIm(pmP, 1.0);
 		BayesIm imP = DirichletEstimator.estimate(priorP, trainData);
-		for (int p = 10; p <= 10; p++){
+		for (int p = 1; p <= 2; p++){
 			
-			double k_add =  p/10.0; //Math.pow(10, -1.0*p);
-			double k_delete = 0.00000001;
+			double k_add =  Math.pow(10, -1.0*p);
+			double k_delete = k_add;
 			double k_reverse = k_add;
 			System.out.println("kappa = " + k_add);
 
@@ -114,7 +114,7 @@ public class TestISFges_RealData {
 				scoreI.setKAddition(k_add);
 				scoreI.setKDeletion(k_delete);
 				scoreI.setKReorientation(k_reverse);
-				scoreI.setSamplePrior(1.0);
+				scoreI.setSamplePrior(10.0);
 				ISFges fgesI = new ISFges(scoreI);
 				fgesI.setKnowledge(knowledge);
 				fgesI.setPopulationGraph(dagP);
@@ -202,28 +202,28 @@ public class TestISFges_RealData {
 
 	}
 }
-class Key {
-
-	public final int n_a;
-	public final int n_d;
-
-	public Key(final int n_a, final int n_d) {
-		this.n_a = n_a;
-		this.n_d = n_d;
-	}
-	@Override
-	public boolean equals (final Object O) {
-		if (!(O instanceof Key)) return false;
-		if (((Key) O).n_a != n_a) return false;
-		if (((Key) O).n_d != n_d) return false;
-		return true;
-	}
-	 @Override
-	 public int hashCode() {
-		 return this.n_a ^ this.n_d;
-	 }
-	 public String print(Key key){
-		return "("+key.n_a +", "+ key.n_d + ")";
-	 }
-
-}
+//class Key {
+//
+//	public final int n_a;
+//	public final int n_d;
+//
+//	public Key(final int n_a, final int n_d) {
+//		this.n_a = n_a;
+//		this.n_d = n_d;
+//	}
+//	@Override
+//	public boolean equals (final Object O) {
+//		if (!(O instanceof Key)) return false;
+//		if (((Key) O).n_a != n_a) return false;
+//		if (((Key) O).n_d != n_d) return false;
+//		return true;
+//	}
+//	 @Override
+//	 public int hashCode() {
+//		 return this.n_a ^ this.n_d;
+//	 }
+//	 public String print(Key key){
+//		return "("+key.n_a +", "+ key.n_d + ")";
+//	 }
+//
+//}
