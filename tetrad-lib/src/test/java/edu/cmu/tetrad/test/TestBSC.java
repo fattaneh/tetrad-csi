@@ -82,7 +82,7 @@ public class TestBSC {
 		test.setDouble(0, 1, 1);
 		test.setDouble(0, 2, 1);
 		test.setDouble(0, 3, 1);
-		IndependenceTest ind = new IndTestProbabilistic(data,test);
+		IndependenceTest ind = new IndTestProbabilistic(data);
 		ind.isIndependent(data.getVariable("X2"), data.getVariable("X3"), data.getVariable("X1"));
 		
 		List<Integer> rows = new ArrayList<Integer>();
@@ -95,7 +95,7 @@ public class TestBSC {
 		System.out.println(data.getNumRows());
 		data.removeRows(rows.stream().mapToInt(i->i).toArray());
 		System.out.println(data.getNumRows());
-		ind = new IndTestProbabilistic(data,test);
+		ind = new IndTestProbabilistic(data);
 		ind.isIndependent(data.getVariable("X2"), data.getVariable("X3"), data.getVariable("X1"));
 //		Rfci rfci = new Rfci(ind);
 ////		rfci.setVerbose(true);

@@ -19,7 +19,8 @@ import edu.cmu.tetrad.data.Knowledge2;
 import edu.cmu.tetrad.graph.*;
 import edu.cmu.tetrad.search.*;
 import edu.pitt.dbmi.data.reader.tabular.TabularDataReader;
-import edu.pitt.dbmi.data.reader.tabular.VerticalDiscreteTabularDataReader;
+import edu.pitt.dbmi.data.reader.tabular.VerticalDiscreteTabularDatasetFileReader;
+import edu.pitt.dbmi.data.reader.tabular.VerticalDiscreteTabularDatasetReader;
 import edu.cmu.tetrad.util.DataConvertUtils;
 import edu.cmu.tetrad.util.DelimiterUtils;
 
@@ -36,8 +37,8 @@ public class TestISFges_RealData {
 
 		char delimiter = ',';
 
-		TabularDataReader trainDataReader = new VerticalDiscreteTabularDataReader(trainDataFile.toFile(), DelimiterUtils.toDelimiter(delimiter));
-		TabularDataReader testDataReader = new VerticalDiscreteTabularDataReader(testDataFile.toFile(), DelimiterUtils.toDelimiter(delimiter));
+		VerticalDiscreteTabularDatasetReader trainDataReader = new VerticalDiscreteTabularDatasetFileReader(trainDataFile, DelimiterUtils.toDelimiter(delimiter));
+		VerticalDiscreteTabularDatasetReader testDataReader = new VerticalDiscreteTabularDatasetFileReader(testDataFile, DelimiterUtils.toDelimiter(delimiter));
 		DataSet trainData = null, testData = null;
 		try {
 			trainData = (DataSet) DataConvertUtils.toDataModel(trainDataReader.readInData());
