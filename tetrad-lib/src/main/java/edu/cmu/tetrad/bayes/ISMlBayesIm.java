@@ -1205,6 +1205,15 @@ public final class ISMlBayesIm implements BayesIm {
 			initializeNode(nodeIndex, oldBayesIm, initializationMethod);
 		}
 	}
+	
+	private boolean isAnyValueLeft(Map<Integer, List<String>> parentMap){
+	
+		for (Integer p: parentMap.keySet()){
+			if (parentMap.get(p).size() == 0)
+				return false;
+		}
+		return true;
+	}
 
 	private void initializeIS(BayesIm oldBayesIm, int initializationMethod) {
 		boolean [] hasISparent = new boolean[this.nodes.length];
@@ -1219,7 +1228,7 @@ public final class ISMlBayesIm implements BayesIm {
 			initializeNode(nodeIndex, oldBayesIm, initializationMethod);	
 
 			Node node = nodes[nodeIndex];
-//			System.out.println("node: "+node);
+//			System.out.println("----------------------");
 
 			List<Node> parentList = graph.getParents(node);
 			Map<Integer, List<String>> parentMap = new HashMap<Integer, List<String>>();
@@ -1236,8 +1245,10 @@ public final class ISMlBayesIm implements BayesIm {
 			Map<List<Integer>, List<String>> key = new HashMap<List<Integer>, List<String>>();
 
 			List<Integer> isParents = new ArrayList<Integer>();
-//			boolean outOfValue = false;
+
+//			while (parentList.size() > 1){
 			while (parentList.size() > 1){
+//				System.out.println(parentMap);
 				hasISparent[nodeIndex] = true;
 				int index =  RandomUtil.getInstance().nextInt(parentList.size());
 				isParents.add(getNodeIndex(parentList.get(index)));
@@ -1248,26 +1259,27 @@ public final class ISMlBayesIm implements BayesIm {
 						int cat =  RandomUtil.getInstance().nextInt(parentMap.get(isParents.get(s)).size());
 						List<String> cur = parentMap.get(isParents.get(s));
 						isValues.add(cur.get(cat));
-						//						System.out.println("cureent IS parent: " +isParents.get(s));
-						//						System.out.println("before:" + parentMap.get(isParents.get(s)));
+//						System.out.println("current IS parent: " +isParents.get(s));
+//						System.out.println("before:" + parentMap.get(isParents.get(s)));
 						parentMap.get(isParents.get(s)).remove(cat);
-						//						System.out.println("after: " +parentMap.get(isParents.get(s)));
+//						System.out.println("after: " +parentMap.get(isParents.get(s)));
 
 					}
 					else{
-						isParents = new ArrayList<Integer>(); 
+//						isParents = new ArrayList<Integer>(); 
+						parentList.remove(index);
 						break;
 					}
 				}
-				//				System.out.println("IS parents: " + isParents);
-				//				System.out.println("IS values: " + isValues);
-				if (isValues.size() > 0){
+//				System.out.println("IS parents: " + isParents);
+//				System.out.println("IS values: " + isValues);
+				if (isValues.size() > 0 && isValues.size()==isParents.size()){
 					key.put(new ArrayList<Integer>(isParents), isValues);
 					parentList.remove(index);
 				}
 			}
-//			System.out.println(node);
-//			System.out.println(key);
+//			System.out.println("node: "+node);
+//			System.out.println("key: "+key);
 			this.nodeCSI.put(node, key);
 //			System.out.println("key: " + key);
 			for (Entry<List<Integer>, List<String>> p: this.nodeCSI.get(node).entrySet()){

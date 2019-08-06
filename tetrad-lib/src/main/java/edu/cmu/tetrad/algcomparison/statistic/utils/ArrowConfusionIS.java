@@ -241,7 +241,9 @@ public class ArrowConfusionIS {
 
 
             if (e1Est == Endpoint.ARROW && e1True != Endpoint.ARROW) {
-            	if (context.get(truth.getNode(edge2.getNode1().getName()))){
+//            	System.out.println(edge1);
+//            	System.out.println(edge2);
+            	if (context.get(truth.getNode(edge1.getNode1().getName()))){
             		arrowsIFp++;
             	}
             	else{

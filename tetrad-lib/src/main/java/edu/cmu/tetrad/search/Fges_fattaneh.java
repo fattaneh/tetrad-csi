@@ -54,7 +54,7 @@ import java.util.concurrent.*;
  * @author Ricardo Silva, Summer 2003
  * @author Joseph Ramsey, Revisions 5/2015
  */
-public final class ISFges implements GraphSearch, GraphScorer {
+public final class Fges_fattaneh implements GraphSearch, GraphScorer {
 
     /**
      * Internal.
@@ -87,11 +87,6 @@ public final class ISFges implements GraphSearch, GraphScorer {
      */
     private Graph initialGraph;
 
-	/**
-	 * An population graph to start from.
-	 */
-	private Graph populationGraph;
-	
     /**
      * If non-null, edges not adjacent in this graph will not be added.
      */
@@ -110,7 +105,7 @@ public final class ISFges implements GraphSearch, GraphScorer {
     /**
      * The totalScore for discrete searches.
      */
-    private ISScore score;
+    private Score score;
 
     /**
      * The logger for this class. The config needs to be set.
@@ -187,9 +182,9 @@ public final class ISFges implements GraphSearch, GraphScorer {
 
     // True if the first step of adding an edge to an empty graph should be scored in both directions
     // for each edge with the maximum score chosen.
-    private boolean symmetricFirstStep = true;
+    private boolean symmetricFirstStep = false;
 
-    final int maxThreads = 10 * ForkJoinPoolInstance.getInstance().getPool().getParallelism();
+    final int maxThreads = 1; //10 * ForkJoinPoolInstance.getInstance().getPool().getParallelism();
 
     //===========================CONSTRUCTORS=============================//
 
@@ -199,7 +194,7 @@ public final class ISFges implements GraphSearch, GraphScorer {
      * case of conditional independence. See Chickering (2002), locally
      * consistent scoring criterion.
      */
-    public ISFges(ISScore score) {
+    public Fges_fattaneh(Score score) {
         if (score == null) {
             throw new NullPointerException();
         }
@@ -406,18 +401,6 @@ public final class ISFges implements GraphSearch, GraphScorer {
 
         this.initialGraph = initialGraph;
     }
-    
-    public void setPopulationGraph(Graph populationGraph) {
-		if (populationGraph != null) {
-			populationGraph = GraphUtils.replaceNodes(populationGraph, variables);
-
-			if (!new HashSet<>(populationGraph.getNodes()).equals(new HashSet<>(variables))) {
-				throw new IllegalArgumentException("Variables aren't the same.");
-			}
-		}
-
-		this.populationGraph = populationGraph;
-	}
 
     /**
      * Sets whether verbose output should be produced.
@@ -566,7 +549,7 @@ public final class ISFges implements GraphSearch, GraphScorer {
 
     //===========================PRIVATE METHODS========================//
     //Sets the discrete scoring function to use.
-    private void setScore(ISScore totalScore) {
+    private void setScore(Score totalScore) {
         this.score = totalScore;
 
         this.variables = new ArrayList<>();
@@ -630,93 +613,68 @@ public final class ISFges implements GraphSearch, GraphScorer {
                         continue;
                     }
 
+					// start: changed by Fattaneh
                     int child = hashIndices.get(y);
 					int parent = hashIndices.get(x);
 					double bump = 0.0, bump2 = 0.0;
 					
-					Set<Node> populationParents = new HashSet<>(populationGraph.getParents(y));
-					int[] populationParentIndices = new int[populationParents.size()];
-					int c = 0;
-					for (Node p : populationParents) {
-						populationParentIndices[c++] = hashIndices.get(p);
-					}
-
-					Set<Node> populationChildren = new HashSet<>(populationGraph.getChildren(y));
-					int[] populationChildrenIndices = new int[populationChildren.size()];
-					c = 0;
-					for (Node ch : populationChildren) {
-						populationChildrenIndices[c++] = hashIndices.get(ch);
-					}
-					
-					// added by Fattaneh
+					// if the initial graph graph is empty, proceed as usual
 					if (initialGraph == null){
-						//bump = score.localScoreDiff(parent, child);
-						bump = score.localScoreDiff(parent, child, new int[0], populationParentIndices, populationChildrenIndices);
-
+						bump = score.localScoreDiff(parent, child);
 						
 					}
 					else{
-						// if x and y has no adjacency, then proceed as an empty initial graph
+						// if x or y has no adjacency in the initial graph, then proceed as if initial graph is empty
 						if (initialGraph.getAdjacentNodes(x).isEmpty() && initialGraph.getAdjacentNodes(y).isEmpty()) {
-							//bump = score.localScoreDiff(parent, child);
-							bump = score.localScoreDiff(parent, child, new int[0], populationParentIndices, populationChildrenIndices);
-
+							bump = score.localScoreDiff(parent, child);
 
 						}
+						// if x or y has adjacencies in the initial graph, then that should be considered in scoring
 						else{
 							int[] parentIndicesY;
 							Set<Node> parentsY = new HashSet<>(initialGraph.getParents(y));
 							parentIndicesY = new int[parentsY.size()];
-							c = 0;
+							int	c = 0;
 							for (Node p : parentsY) {
 								parentIndicesY[c++] = hashIndices.get(p);
 							}
 
-							//bump  = score.localScoreDiff(parent, child, parentIndicesY);
-							bump = score.localScoreDiff(parent, child, parentIndicesY, populationParentIndices, populationChildrenIndices);
+							bump  = score.localScoreDiff(parent, child, parentIndicesY);
+							
+//							if (verbose2){
+//								System.out.println("bump: " + bump);
+//								System.out.println("bump w/o parents y: " + score.localScoreDiff(parent, child));
+//							}
 						}
 						
 					}
 
-
-
 					// computing the bump of an edge from y (child) --> x (parent)
 					if (symmetricFirstStep) {
-						Set<Node> populationParentsX = new HashSet<>(populationGraph.getParents(x));
-						int[] populationParentIndicesX = new int[populationParentsX.size()];
-						c = 0;
-						for (Node p : populationParentsX) {
-							populationParentIndicesX[c++] = hashIndices.get(p);
-						}
-
-						Set<Node> populationChildrenX = new HashSet<>(populationGraph.getChildren(x));
-						int[] populationChildrenIndicesX = new int[populationChildrenX.size()];
-						c = 0;
-						for (Node ch : populationChildrenX) {
-							populationChildrenIndicesX[c++] = hashIndices.get(ch);
-						}
 						if (initialGraph == null){
-		                    //bump2 = score.localScoreDiff(child, parent);	
-							bump2 = score.localScoreDiff(child, parent, new int[0], populationParentIndicesX, populationChildrenIndicesX);
-
+		                    bump2 = score.localScoreDiff(child, parent);	
 						}
 						else{
-							// if x and y has no adjacency, then proceed as an empty initial graph
+							// if x or y has no adjacency, then proceed as an empty initial graph
 							if (initialGraph.getAdjacentNodes(x).isEmpty() && initialGraph.getAdjacentNodes(y).isEmpty()) {
-		                        //bump2 = score.localScoreDiff(child, parent);
-								bump2 = score.localScoreDiff(child, parent, new int[0], populationParentIndicesX, populationChildrenIndicesX);
+		                        bump2 = score.localScoreDiff(child, parent);
+
 							}
 							else{
 								int[] parentIndicesX;
 								Set<Node> parentsX = new HashSet<>(initialGraph.getParents(x));
 								parentIndicesX = new int[parentsX.size()];
-								c = 0;
+								int	c = 0;
 								for (Node p : parentsX) {
 									parentIndicesX[c++] = hashIndices.get(p);
 								}
 
-//								bump2  = score.localScoreDiff(child, parent, parentIndicesX);
-								bump = score.localScoreDiff(child, parent, parentIndicesX, populationParentIndicesX, populationChildrenIndicesX);
+								bump2  = score.localScoreDiff(child, parent, parentIndicesX);
+								
+//								if (verbose2){
+//									System.out.println("bump2: " + bump2);
+//									System.out.println("bump2 w/o parents y: " + score.localScoreDiff(child, parent));
+//								}
 							}
 							
 						}
@@ -727,7 +685,7 @@ public final class ISFges implements GraphSearch, GraphScorer {
 						continue;
 					}
 
-					//???
+					// I'm not sure about this part
 					if (bump > 0 || bump2 > 0) {
 						final Edge edge = Edges.undirectedEdge(x, y);
 						effectEdgesGraph.addEdge(edge);
@@ -743,7 +701,7 @@ public final class ISFges implements GraphSearch, GraphScorer {
 							
 						}
 						else{
-							if (initialGraph.getAdjacentNodes(x).isEmpty() && initialGraph.getAdjacentNodes(y).isEmpty()){
+							if( initialGraph.getAdjacentNodes(x).isEmpty() && initialGraph.getAdjacentNodes(y).isEmpty()){
 								addArrow(x, y, emptySet, emptySet, bump);
 								
 								if (!symmetricFirstStep){
@@ -776,6 +734,7 @@ public final class ISFges implements GraphSearch, GraphScorer {
 					}
 				}
 			}
+            // end: changed by Fattaneh
 
 			return true;
 		}
@@ -2160,35 +2119,15 @@ public final class ISFges implements GraphSearch, GraphScorer {
 
             // Calculate BIC score for this node
             int yIndex = hashIndices.get(y);
-            Set<Node> populationParents = new HashSet<>(this.populationGraph.getParents(y));
-			int[] populationParentIndices = new int[populationParents.size()];
-			count = 0;
-			for (Node parent : populationParents) {
-				populationParentIndices[count++] = hashIndices.get(parent);
-			}
+            double node_score = score.localScore(yIndex, parentIndices);
 
-			Set<Node> populationChildren = new HashSet<>(this.populationGraph.getChildren(y));
-			int[] populationChildrenIndices = new int[populationChildren.size()];
-			count = 0;
-			for (Node child : populationChildren) {
-				populationChildrenIndices[count++] = hashIndices.get(child);
-			}
-			//			System.out.println(y);
-			//			System.out.println(dag.getParents(y));
-			//			System.out.println(this.populationGraph.getParents(y));
-			//			System.out.println(Arrays.toString(parentIndices));
-			//			System.out.println(Arrays.toString(populationParentIndices));
-			//			System.out.println("---------------");
-			double node_score = score.localScore(yIndex, parentIndices, populationParentIndices, populationChildrenIndices);
-          nodeAttributes.put(y, node_score);
+            nodeAttributes.put(y, node_score);
 
-			//          double node_score = score.localScore(yIndex, parentIndices);
-			//			System.out.println( "node " + y +", pa (" + y + ") = " + Arrays.toString(parentIndices) +" =" + ls +"\n");
-			_score += node_score;
-		}
+            _score += node_score;
+        }
 
-		return _score;
-	}
+        return _score;
+    }
 
     private double scoreGraphChange(Node y, Set<Node> parents,
                                     Node x, Map<Node, Integer> hashIndices) {
@@ -2207,34 +2146,9 @@ public final class ISFges implements GraphSearch, GraphScorer {
         for (Node parent : parents) {
             parentIndices[count++] = hashIndices.get(parent);
         }
-     // get pop graph info
-     		Set<Node> populationParents = new HashSet<>(this.populationGraph.getParents(y));
 
-     		int[] populationParentIndices = new int[populationParents.size()];
-     		count = 0;
-     		for (Node parent : populationParents) {
-     			populationParentIndices[count++] = hashIndices.get(parent);
-     		}
-
-     		Set<Node> populationChildren = new HashSet<>(this.populationGraph.getChildren(y));
-     		int[] populationChildrenIndices = new int[populationChildren.size()];
-     		count = 0;
-     		for (Node child : populationChildren) {
-     			populationChildrenIndices[count++] = hashIndices.get(child);
-     		}
-     		//		System.out.println("yIndex: " + yIndex);
-     		//		System.out.println("hashIndices.get(x): " + hashIndices.get(x));
-     		//		System.out.println("parentIndices: " + Arrays.toString(parentIndices));
-     		//		System.out.println("populationParentIndices: " + Arrays.toString(populationParentIndices));
-     		double diff  = score.localScoreDiff(hashIndices.get(x), yIndex, parentIndices, populationParentIndices, populationChildrenIndices);
-     		//		System.out.println("diff: " + diff);
-     		//		System.out.println("+++++++++");
-     		return diff;
-
-     		//      return score.localScoreDiff(hashIndices.get(x), yIndex, parentIndices);
-
-     	}
-
+        return score.localScoreDiff(hashIndices.get(x), yIndex, parentIndices);
+    }
 
     private List<Node> getVariables() {
         return variables;

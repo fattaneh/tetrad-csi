@@ -30,25 +30,25 @@ import edu.cmu.tetrad.util.TextTable;
 //import nu.xom.Document;
 //import nu.xom.ParsingException;
 
-public class TestISFges {
+public class TestISFges_Simulation {
 	private ConcurrentMap<Node, Integer> hashIndices ;
 	private PrintStream out;
 	public static void main(String[] args) {
 		
-		TestISFges t = new TestISFges();
+		TestISFges_Simulation t = new TestISFges_Simulation();
 		t.testSimulation();
 	}
 
 	public void testSimulation(){
 		RandomUtil.getInstance().setSeed(1454147770L);
 		int[] numVarss = new int[]{50};
-		double[] edgesPerNodes = new double[]{2.0};
+		double[] edgesPerNodes = new double[]{1.0};
 		int numCases = 1000;
 		int numTests = 500;
 		int minCat = 2;
 		int maxCat = 3;
 		int numSim = 10;
-		double k_add = 0.1;
+		double k_add = 0.9;
 		double k_delete = k_add; 
 		double k_reverse = k_add; 
 		for (int numVars: numVarss){
@@ -73,7 +73,7 @@ public class TestISFges {
 				double[] adjIP = new double[numSim], adjIR = new double[numSim], adjNP = new double[numSim], adjNR = new double[numSim];
 				double[] adjIPI = new double[numSim], adjIRI = new double[numSim], adjNPI = new double[numSim], adjNRI = new double[numSim];
 				double[] avgcsi = new double[numSim];
-				double samplePrior = 10.0;
+				double samplePrior = 1.0;
 				try {
 		            File dir = new File("/Users/fattanehjabbari/CCD-Project/CS-BN/simulation-newprior/PESS"+samplePrior+"/");
 		            
@@ -126,9 +126,10 @@ public class TestISFges {
 					// estimate MAP parameters from the population model
 					DagInPatternIterator iterator = new DagInPatternIterator(graphP);
 					Graph dagP = iterator.next();
+//					dagP = GraphUtils.replaceNodes(dagP, trainData.getVariables());
+
 //					BayesPm pmP = new BayesPm(dagP);
 //					//			BayesPm pmP = new BayesPm(graphP);
-//
 //					DirichletBayesIm priorP = DirichletBayesIm.symmetricDirichletIm(pmP, 1.0);
 //					BayesIm imP = DirichletEstimator.estimate(priorP, trainData);
 					//			System.out.println("trueBN: " + trueBN);
@@ -160,20 +161,8 @@ public class TestISFges {
 						ISFges fgesI = new ISFges(scoreI);
 						fgesI.setPopulationGraph(graphP);
 						fgesI.setInitialGraph(graphP);
-//						int [] parents = new int[2];
-//						parents[0] = 0;
-//						parents[1] = 3;
-////						parents[2] = 9;
-//						int [] parents_pop = new int[2];
-//						parents_pop[0] = 0;
-//						parents_pop[1] = 3;
-////						parents_pop[2] = 4;
-////						parents_pop[3] = 5;
-//						int [] children_pop = new int[0];
-//						scoreI.localScore(8, parents, parents_pop, children_pop);
 						Graph graphI = fgesI.search();
 					
-	
 						ArrowConfusionIS congI = new ArrowConfusionIS(trueBNI, GraphUtils.replaceNodes(graphI, trueBNI.getNodes()), context);
 						AdjacencyConfusionIS conAdjGI = new AdjacencyConfusionIS(trueBNI, GraphUtils.replaceNodes(graphI, trueBNI.getNodes()), context);
 						

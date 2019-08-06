@@ -612,24 +612,24 @@ public final class ISFges_OLD implements GraphSearch, GraphScorer {
 					}
 					double bump = score.localScoreDiff(parent, child, new int[0], populationParentIndices, populationChildrenIndices);
 //
-                    if (symmetricFirstStep) {
-                    	Set<Node> populationParents2 = new HashSet<>(populationGraph.getParents(x));
-					int[] populationParentIndices2 = new int[populationParents2.size()];
-					c = 0;
-					for (Node p : populationParents2) {
-						populationParentIndices2[c++] = hashIndices.get(p);
+					if (symmetricFirstStep) {
+						Set<Node> populationParents2 = new HashSet<>(populationGraph.getParents(x));
+						int[] populationParentIndices2 = new int[populationParents2.size()];
+						c = 0;
+						for (Node p : populationParents2) {
+							populationParentIndices2[c++] = hashIndices.get(p);
+						}
+
+						//error that I corrected (changed y to x in the following line)
+						Set<Node> populationChildren2 = new HashSet<>(populationGraph.getChildren(x));
+						int[] populationChildrenIndices2 = new int[populationChildren2.size()];
+						c = 0;
+						for (Node ch : populationChildren2) {
+							populationChildrenIndices2[c++] = hashIndices.get(ch);
+						}
+						double bump2 = score.localScoreDiff(child, parent, new int[0], populationParentIndices2, populationChildrenIndices2);
+						bump = bump > bump2 ? bump : bump2;
 					}
-					
-					//error that I corrected (changed y to x in the following line)
-					Set<Node> populationChildren2 = new HashSet<>(populationGraph.getChildren(x));
-					int[] populationChildrenIndices2 = new int[populationChildren2.size()];
-					c = 0;
-					for (Node ch : populationChildren2) {
-						populationChildrenIndices2[c++] = hashIndices.get(ch);
-					}
-					double bump2 = score.localScoreDiff(child, parent, new int[0], populationParentIndices2, populationChildrenIndices2);
-                    bump = bump > bump2 ? bump : bump2;
-                    }
 
 
                     if (boundGraph != null && !boundGraph.isAdjacentTo(x, y)) continue;

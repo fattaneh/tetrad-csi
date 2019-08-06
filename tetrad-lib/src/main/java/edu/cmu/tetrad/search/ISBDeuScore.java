@@ -212,9 +212,11 @@ public class ISBDeuScore implements ISScore {
 		
 		// compute IS score
 		if (parents_is.length>0){
-			// K2
-//			double rowPrior_i = 1.0 * K;
-//			double cellPrior_i = 1.0;
+			
+			// K2 prior 
+//			double rowPrior_i = getSamplePrior() * K;
+//			double cellPrior_i = getSamplePrior();
+			
 			double rowPrior_i = computeRowPrior(parents_is, parentValuesTest, parents_all, row_priors);
 			rowPrior_i = getSamplePrior() * rowPrior_i;
 			double cellPrior_i = rowPrior_i / K;
@@ -232,8 +234,8 @@ public class ISBDeuScore implements ISScore {
 		for (int j = 0; j < r_p; j++) {
 			
 			// K2 prior		
-//			double rowPrior_p = 1.0 * K;
-//			double cellPrior_p = 1.0;
+//			double rowPrior_p = getSamplePrior() * K;
+//			double cellPrior_p = getSamplePrior();
 			
 			int[] parentValuesPop = new int[parents_pop.length];
 			parentValuesPop = getParentValuesForCombination(j, dims_p);
@@ -244,17 +246,18 @@ public class ISBDeuScore implements ISScore {
 			if(rowPrior_p > 0){	
 				scorePop -= Gamma.logGamma(rowPrior_p + np_j[j]);
 				for (int k = 0; k < K; k++) {
-					if(np_jk[j][k] > 0){
-						scorePop += Gamma.logGamma(cellPrior_p + np_jk[j][k]);
-					}
+//					if(np_jk[j][k] > 0){
+					scorePop += Gamma.logGamma(cellPrior_p + np_jk[j][k]);
+//					}
 					scorePop -= Gamma.logGamma(cellPrior_p);
 				}
 				scorePop += Gamma.logGamma(rowPrior_p);
 			}
 		}
 
+
 		scoreIS += getPriorForStructure(node, parents_is, parents_pop, children_pop);
-//		scorePop += getPriorForStructure(parents_pop.length);
+		scorePop += getPriorForStructure(parents_pop.length);
 		score = scorePop + scoreIS;
 		return score;
 	}

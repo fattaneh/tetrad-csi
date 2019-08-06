@@ -81,6 +81,7 @@ public final class IndTestChiSquare implements IndependenceTest {
      */
     private double determinationP = 0.99;
     private HashSet<IndependenceFact> facts;
+    private HashMap<IndependenceFact, Double> H;
 
     private boolean verbose = false;
 
@@ -116,6 +117,7 @@ public final class IndTestChiSquare implements IndependenceTest {
         }
 
         this.chiSquareTest = new ChiSquareTest(dataSet, alpha);
+        this.H = new HashMap<>();
     }
 
     /**
@@ -215,7 +217,9 @@ public final class IndTestChiSquare implements IndependenceTest {
         this.xSquare = result.getXSquare();
         this.df = result.getDf();
         this.pValue = result.getPValue();
+        H.put(new IndependenceFact(x, y, z), result.getPValue());
 
+        
         if (result.isIndep()) {
             StringBuilder sb = new StringBuilder();
             sb.append("INDEPENDENCE ACCEPTED: ");
@@ -226,20 +230,11 @@ public final class IndTestChiSquare implements IndependenceTest {
 
             TetradLogger.getInstance().log("independencies", sb.toString());
         }
-//        else {
-//            StringBuilder sb = new StringBuilder();
-//            sb.append("Not independent: ");
-//            sb.append(SearchLogUtils.independenceFact(x, y, z));
-//            sb.append("\tp = ").append(nf.format(result.getLikelihoodRatioP())).append(
-//                    "\tx^2 = ").append(nf.format(result.getXSquare())).append(
-//                    "\tdf = ").append(result.getDof());
-//            TetradLogger.getInstance().independenceDetails(sb.toString());
-//        }
 
         if (facts != null) {
             this.facts.add(new IndependenceFact(x, y, z));
         }
-
+        
         return result.isIndep();
     }
 
@@ -410,6 +405,10 @@ public final class IndTestChiSquare implements IndependenceTest {
 
     public HashSet<IndependenceFact> getFacts() {
         return facts;
+    }
+    
+    public HashMap<IndependenceFact, Double> getH() {
+        return H;
     }
 
     @Override

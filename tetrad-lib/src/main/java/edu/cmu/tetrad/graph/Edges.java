@@ -252,10 +252,10 @@ public final class Edges {
      */
     public static Node getDirectedEdgeHead(Edge edge) {
         if ((edge.getEndpoint1() == Endpoint.ARROW) &&
-                (edge.getEndpoint2() == Endpoint.TAIL)) {
+                (edge.getEndpoint2() == Endpoint.TAIL || edge.getEndpoint2() == Endpoint.CIRCLE)) {
             return edge.getNode1();
         } else if ((edge.getEndpoint2() == Endpoint.ARROW) &&
-                (edge.getEndpoint1() == Endpoint.TAIL)) {
+                (edge.getEndpoint1() == Endpoint.TAIL || edge.getEndpoint1() == Endpoint.CIRCLE)) {
             return edge.getNode2();
         } else {
             throw new IllegalArgumentException("Not a directed edge: " + edge);

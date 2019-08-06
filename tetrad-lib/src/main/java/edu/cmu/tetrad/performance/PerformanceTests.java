@@ -843,6 +843,7 @@ public class PerformanceTests {
 
             System.out.println("Starting simulation");
             Graph estPattern;
+            Graph estPattern4 = null;
             long elapsed;
 
             if (continuous) {
@@ -900,12 +901,12 @@ public class PerformanceTests {
                 elapsed = timec - timea;
             } else {
 
-                BayesPm pm = new BayesPm(dag, 3, 3);
+                BayesPm pm = new BayesPm(dag, 3, 4);
                 MlBayesIm im = new MlBayesIm(pm, MlBayesIm.RANDOM);
 
                 DataSet data = im.simulateData(numCases, false, tiers);
 
-                System.out.println("Finishing simulation");
+                System.out.println("Finishing simulation: " + data.getNumRows() + ", col: " + data.getNumColumns());
 
                 long time2 = System.currentTimeMillis();
 
@@ -921,26 +922,46 @@ public class PerformanceTests {
                 System.out.println("\nStarting FGES");
 
                 long timea = System.currentTimeMillis();
-
+                Graph initialGraph = new EdgeListGraph(data.getVariables());
+                initialGraph.addDirectedEdge(initialGraph.getNode("X3"), initialGraph.getNode("X0"));
+                initialGraph.addDirectedEdge(initialGraph.getNode("X2"), initialGraph.getNode("X5"));
+                System.out.println("true pattern: " + pattern.getEdges());
+                System.out.println("initialGraph: " + initialGraph.getEdges());
                 Fges fges = new Fges(score);
-//                fges.setVerbose(false);
-                fges.setNumPatternsToStore(0);
                 fges.setOut(System.out);
                 fges.setFaithfulnessAssumed(faithfulness);
-                fges.setCycleBound(-1);
-
-                long timeb = System.currentTimeMillis();
 
                 estPattern = fges.search();
+                System.out.println("FGES W/O initial Graph" + estPattern.getEdges());
+   
+//                long timec = System.currentTimeMillis();
+//
+//                out.println("Time consructing BDeu score " + (timea - time3) + " ms");
+//                out.println("Time for FGES constructor " + (timeb - timea) + " ms");
+//                out.println("Time for FGES search " + (timec - timea) + " ms");
+//                out.println();
+//                
+//                System.out.println("************************");
+//                fges.setInitialGraph(initialGraph);
+//                Graph estPattern2 = fges.search();
+////                System.out.println("FGES WITH initial Graph" + estPattern2.getEdges());
+//
+//                System.out.println("++++++++++++++++++++++++++++++++++++++");
+                Fges_fattaneh fges2 = new Fges_fattaneh(score);
+//                fges2.setNumPatternsToStore(0);
+//                fges2.setOut(System.out);
+//                fges2.setFaithfulnessAssumed(faithfulness);
+//                fges2.setCycleBound(-1);
+//
+//                Graph estPattern3 = fges2.search();
+////                System.out.println("FGES FATTANEH W/O initial Graph" + estPattern3.getEdges());
+//
+//                System.out.println("************************");
+                fges2.setInitialGraph(initialGraph);
+                estPattern4 = fges2.search();
+                System.out.println("FGES FATTANEH WITH initial Graph" + estPattern4.getEdges());
 
-                long timec = System.currentTimeMillis();
-
-                out.println("Time consructing BDeu score " + (timea - time3) + " ms");
-                out.println("Time for FGES constructor " + (timeb - timea) + " ms");
-                out.println("Time for FGES search " + (timec - timea) + " ms");
-                out.println();
-
-                elapsed = timec - timea;
+//                elapsed = timec - timea;
             }
 
             System.out.println("Done with FGES");
@@ -967,58 +988,24 @@ public class PerformanceTests {
 //            comparison[0] = trueAdj / (double) (trueAdj + adjFp);
 //            comparison[1] = trueAdj / (double) (trueAdj + adjFn);
 
-            System.out.println("Counting misclassifications.");
+//            System.out.println("Counting misclassifications.");
+//
+//            estPattern = GraphUtils.replaceNodes(estPattern, pattern.getNodes());
+			GraphUtils.GraphComparison cmp = SearchGraphUtils.getGraphComparison(estPattern, pattern);
+			int[][] counts = cmp.getCounts();
+		
 
-            estPattern = GraphUtils.replaceNodes(estPattern, pattern.getNodes());
-
-            int[][] counts = GraphUtils.edgeMisclassificationCounts(pattern, estPattern, false);
-            allCounts.add(counts);
-
-            System.out.println(new Date());
-
-            int sumRow = counts[4][0] + counts[4][3] + counts[4][5];
-            int sumCol = counts[0][3] + counts[4][3] + counts[5][3] + counts[7][3];
-            int trueArrow = counts[4][3];
-
-            int sumTrueAdjacencies = 0;
-
-            for (int i = 0; i < 7; i++) {
-                for (int j = 0; j < 5; j++) {
-                    sumTrueAdjacencies += counts[i][j];
-                }
-            }
-
-            int falsePositiveAdjacencies = 0;
-
-            for (int j = 0; j < 5; j++) {
-                falsePositiveAdjacencies += counts[7][j];
-            }
-
-            int falseNegativeAdjacencies = 0;
-
-            for (int i = 0; i < 5; i++) {
-                falseNegativeAdjacencies += counts[i][5];
-            }
-
-            comparison[0] = sumTrueAdjacencies / (double) (sumTrueAdjacencies + falsePositiveAdjacencies);
-            comparison[1] = sumTrueAdjacencies / (double) (sumTrueAdjacencies + falseNegativeAdjacencies);
-
-            comparison[2] = trueArrow / (double) sumCol;
-            comparison[3] = trueArrow / (double) sumRow;
-
-            comparisons.add(comparison);
-
-            out.println(GraphUtils.edgeMisclassifications(counts));
-            out.println(precisionRecall(comparison));
-
-            elapsedTimes.add(elapsed);
-            out.println("\nElapsed: " + elapsed + " ms");
+            System.out.println(GraphUtils.edgeMisclassifications(counts));
+            System.out.println(precisionRecall(comparison));
+//
+//            elapsedTimes.add(elapsed);
+//            out.println("\nElapsed: " + elapsed + " ms");
         }
 
 
-        printAverageConfusion("Average", allCounts);
-        printAveragePrecisionRecall(comparisons);
-        printAverageStatistics(elapsedTimes, degrees);
+//        printAverageConfusion("Average", allCounts);
+//        printAveragePrecisionRecall(comparisons);
+//        printAverageStatistics(elapsedTimes, degrees);
 
         out.close();
     }
@@ -2422,11 +2409,11 @@ public class PerformanceTests {
 
         System.out.println("Finish");
 
-        performanceTests.testPc(5000, 1, 1000, .0001);
+//        performanceTests.testPc(5000, 1, 1000, .0001);
 
 
 //        performanceTests.testPcStable(20000, 1, 1000, .00001);
-        performanceTests.testPcStableMax(5000, 1, 1000, .0001);
+//        performanceTests.testPcStableMax(5000, 1, 1000, .0001);
 //        performanceTests.testPcStableMax(5000, 5, 1000, .0001);
 //        performanceTests.testFges(5000, 5, 1000, 4);
 

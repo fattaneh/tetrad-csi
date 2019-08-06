@@ -63,10 +63,12 @@ public class TestISFGES_MELANOMA {
 
 		// learn the population model
 		BDeuScore scoreP = new BDeuScore(trainDataOrig);
-		scoreP.setStructurePrior(1.0);
+		double structPrior = 1.0;
+		scoreP.setStructurePrior(structPrior);
+		System.out.println(scoreP.localScore(514));
 		Fges fgesP = new Fges (scoreP);
 		fgesP.setKnowledge(knowledge);
-		fgesP.setSymmetricFirstStep(true);
+//		fgesP.setSymmetricFirstStep(false);
 		Graph graphP = fgesP.search();
 		graphP = GraphUtils.replaceNodes(graphP, trainDataOrig.getVariables());
 		System.out.println("Pop graph:" + graphP.getEdges());
@@ -128,7 +130,7 @@ public class TestISFGES_MELANOMA {
 				trainData.removeRows(new int[]{i});
 //				// learn the population model
 //				BDeuScore scorePi = new BDeuScore(trainData);
-//				scoreP.setSamplePrior(5.0);
+//				scoreP.setStructurePrior(structPrior);
 //				Fges fgesPi = new Fges (scorePi);
 //				fgesPi.setKnowledge(knowledge);
 //				Graph graphPi = fgesPi.search();
@@ -142,7 +144,7 @@ public class TestISFGES_MELANOMA {
 				scoreI.setKAddition(k_add);
 				scoreI.setKDeletion(k_delete);
 				scoreI.setKReorientation(k_reverse);
-				scoreI.setSamplePrior(1.0);
+				scoreI.setStructurePrior(structPrior);
 				ISFges fgesI = new ISFges(scoreI);
 				fgesI.setKnowledge(knowledge);
 				fgesI.setPopulationGraph(dagP);
@@ -171,6 +173,7 @@ public class TestISFGES_MELANOMA {
 
 	
 				int diseaseIndex_p = imP.getNodeIndex(imP.getNode("PD1response"));
+				imP = DirichletEstimator.estimate(priorP, trainData);
 				int[] parents_p = imP.getParents(diseaseIndex_p);
 				Arrays.sort(parents_p);
 				int[] values_p = new int[parents_p.length];
