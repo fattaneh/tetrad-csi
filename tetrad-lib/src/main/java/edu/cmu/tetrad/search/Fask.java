@@ -98,6 +98,18 @@ public final class Fask implements GraphSearch {
         data = dataSet.getDoubleData().transpose().toArray();
     }
 
+    public Fask(DataSet dataSet, Graph initialGraph) {
+        if (!dataSet.isContinuous()) {
+            throw new IllegalArgumentException("For FASK, the dataset must be entirely continuous");
+        }
+
+        this.dataSet = dataSet;
+        this.initialGraph = initialGraph;
+        this.test = null;
+
+        data = dataSet.getDoubleData().transpose().toArray();
+    }
+
     //======================================== PUBLIC METHODS ====================================//
 
     /**
@@ -142,7 +154,7 @@ public final class Fask implements GraphSearch {
             fas.setKnowledge(knowledge);
             G0 = fas.search();
 
-//            Fges fges = new Fges(new SemBicScore(new CovarianceMatrixOnTheFly(dataSet)));
+//            Fges fges = new Fges(new SemBicScore(new CovarianceMatrix(dataSet)));
 //            fges.setFaithfulnessAssumed(false);
 //            fges.setKnowledge(knowledge);
 //            G0 = fges.search();
@@ -254,7 +266,7 @@ public final class Fask implements GraphSearch {
 //            }
 //        }
 //
-//        final SemBicScore score = new SemBicScore(new CovarianceMatrixOnTheFly(dataSet));
+//        final SemBicScore score = new SemBicScore(new CovarianceMatrix(dataSet));
 //        score.setPenaltyDiscount(penaltyDiscount);
 //        Fges fges = new Fges(score);
 //        fges.setKnowledge(knowledge);

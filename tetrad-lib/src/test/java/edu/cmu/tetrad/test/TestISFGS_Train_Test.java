@@ -30,19 +30,20 @@ import edu.cmu.tetrad.util.DelimiterUtils;
 public class TestISFGS_Train_Test {
 	public static void main(String[] args) {
 		
-//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/Shyam-data/";
-//		String dataName = "port";
-//		String pathToTrainData = pathToFolder + "PORT/" + dataName + "_train.csv";
-//		String pathToTestData = pathToFolder + "PORT/" + dataName + "_test.csv";
-//
-//		String target = "217.DIREOUT";
-		
-		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/PPT_data/";
-		String dataName = "ppt"; 
-		String pathToTrainData = pathToFolder + dataName + "_train_july11.csv";
-		String pathToTestData = pathToFolder + dataName + "_test_july11.csv";
+		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/Shyam-data/";
+		String dataName = "port";
+		String pathToTrainData = pathToFolder + "PORT/" + dataName + "_train.csv";
+		String pathToTestData = pathToFolder + "PORT/" + dataName + "_test.csv";
 
-		String target = "Composite_Outcome";
+		String target = "217.DIREOUT";
+		
+//		String pathToFolder = "/Users/fattanehjabbari/PPT_project/Data/";
+//		String dataSubName = "RehabTherapies_AllTypes";
+//		String dataName = "ppt_data_processed_"+dataSubName+ "_aug28";
+//		String pathToTrainData = pathToFolder + dataName + "_train.csv";
+//		String pathToTestData = pathToFolder + dataName + "_test.csv";
+//
+//		String target = "Composite_Outcome";
 		
 		// Read in the data
 		DataSet trainData = readData(pathToTrainData);
@@ -61,7 +62,7 @@ public class TestISFGS_Train_Test {
 		double T_minus = 0.2;
 		
 		// loop over kappa
-		for (int p = 1; p <= 10; p++){
+		for (int p = 3; p <= 10; p++){
 
 			double k_add =  p/10.0; //Math.pow(10, -1.0*p);
 	

@@ -25,6 +25,8 @@ import edu.cmu.tetrad.data.DataModel;
 import edu.cmu.tetrad.data.DataSet;
 import edu.cmu.tetrad.data.DiscreteVariable;
 import edu.cmu.tetrad.data.ICovarianceMatrix;
+import edu.cmu.tetrad.graph.EdgeListGraph;
+import edu.cmu.tetrad.graph.Graph;
 import edu.cmu.tetrad.graph.IndependenceFact;
 import edu.cmu.tetrad.graph.Node;
 import edu.cmu.tetrad.util.RandomUtil;
@@ -33,9 +35,13 @@ import edu.pitt.dbmi.algo.bayesian.constraint.inference.BCInference;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Uses BCInference by Cooper and Bui to calculate probabilistic conditional independence judgments.
@@ -48,6 +54,7 @@ public class IndTestProbabilistic implements IndependenceTest {
      * Calculates probabilities of independence for conditional independence facts.
      */
     private final BCInference bci;
+    private Score bdeu;
     // Not
     private boolean threshold = false;
 
@@ -105,6 +112,7 @@ public class IndTestProbabilistic implements IndependenceTest {
         }
 
         bci = new BCInference(cases, nodeDimensions);
+        bdeu = new BDeuScore(this.data);
 
         nodes = dataSet.getVariables();
 
@@ -131,17 +139,24 @@ public class IndTestProbabilistic implements IndependenceTest {
     @Override
     public boolean isIndependent(Node x, Node y, Node... z) {
         IndependenceFact key = new IndependenceFact(x, y, z);
+      
+       
+        double pInd = Double.NaN;      
+//        double pInd_old = probConstraint(BCInference.OP.independent, x, y, z);
 
-        double pInd = Double.NaN;
-        
         if (!H.containsKey(key)) {
-            pInd = probConstraint(BCInference.OP.independent, x, y, z);
+//        	pInd = probConstraint(BCInference.OP.independent, x, y, z);
+        	pInd = computeInd(x, y, z);
+
             H.put(key, pInd);
         }else {
         	pInd = H.get(key);
         }
 
-        double p = probOp(BCInference.OP.independent, pInd);
+//        System.out.println("pInd_old: " + pInd_old);
+//        System.out.println("pInd: " + pInd);
+//        System.out.println("--------------------");
+        double p = pInd; //probOp(BCInference.OP.independent, pInd);
 
         this.posterior = p;
 
@@ -160,7 +175,124 @@ public class IndTestProbabilistic implements IndependenceTest {
         }
     }
 
-   
+	private double computeInd(Node x, Node y, Node... z) {
+		double pInd = Double.NaN;
+		List<Node> _z = new ArrayList<>();
+        _z.add(x);
+        _z.add(y);
+        Collections.addAll(_z, z);
+        Graph[] indBNs = new Graph[4];
+        for (int i = 0; i < indBNs.length; i++){
+        	indBNs[i] = new EdgeListGraph(_z);
+        }
+        
+        for (Node n : z){
+        	indBNs[1].addDirectedEdge(n, x);
+        	indBNs[1].addDirectedEdge(n, y);
+        	indBNs[2].addDirectedEdge(n, x);
+        	indBNs[3].addDirectedEdge(n, y);
+        }
+        
+        Graph[] depBNs = new Graph[7];
+        for (int i = 0; i < depBNs.length; i++){
+        	depBNs[i] = new EdgeListGraph(_z);
+        }
+        
+        depBNs[0].addDirectedEdge(x, y);
+        depBNs[1].addDirectedEdge(x, y);
+    	depBNs[2].addDirectedEdge(y, x);
+    	depBNs[4].addDirectedEdge(x, y);
+    	depBNs[5].addDirectedEdge(y, x);
+    	depBNs[6].addDirectedEdge(x, y);
+
+        for (Node n : z){
+        	depBNs[1].addDirectedEdge(n, x);
+        	depBNs[2].addDirectedEdge(n, y);
+        	depBNs[3].addDirectedEdge(x, n);
+        	depBNs[3].addDirectedEdge(y, n);
+        	depBNs[4].addDirectedEdge(n, x);
+        	depBNs[4].addDirectedEdge(n, y);
+        	depBNs[5].addDirectedEdge(n, x);
+        	depBNs[6].addDirectedEdge(n, y);
+        }
+        
+        double scoreIndAll = Double.NEGATIVE_INFINITY; 
+        double indPrior = Math.log(0.5 / (indBNs.length));
+        double[] indScores = new double[indBNs.length];
+        double[] depScores = new double[depBNs.length];
+        for (int i = 0; i < indScores.length; i++){
+        	indScores[i] = scoreDag(indBNs[i]);
+        	scoreIndAll = lnXpluslnY(scoreIndAll, (indScores[i] + indPrior));
+//        	System.out.println("scoreIndAll: " + scoreIndAll);
+        }
+        
+        
+        double scoreDepAll = Double.NEGATIVE_INFINITY;
+        double depPrior = Math.log(0.5 / (depBNs.length));
+        for (int i = 0; i < depScores.length; i++){
+        	depScores[i] = scoreDag(depBNs[i]);
+        	scoreDepAll = lnXpluslnY(scoreDepAll, (depScores[i] + depPrior));
+//        	System.out.println("scoreDepAll: " + scoreDepAll);
+        }
+
+        double scoreAll = lnXpluslnY(scoreIndAll, scoreDepAll);
+//    	System.out.println("scoreDepAll: " + scoreDepAll);
+//        System.out.println("scoreIndAll: " + scoreIndAll);
+//        System.out.println("scoreAll: " + scoreAll);
+
+        pInd = Math.exp(scoreIndAll - scoreAll);
+        
+        return pInd;
+	}
+	
+	public double scoreDag(Graph dag) {
+
+        double _score = 0.0;
+
+        for (Node y : dag.getNodes()) {
+            Set<Node> parents = new HashSet<>(dag.getParents(y));
+            int parentIndices[] = new int[parents.size()];
+            Iterator<Node> pi = parents.iterator();
+            int count = 0;
+
+            while (pi.hasNext()) {
+                Node nextParent = pi.next();
+                parentIndices[count++] = this.indices.get(nextParent);
+            }
+
+            int yIndex = this.indices.get(y);
+            _score += this.bdeu.localScore(yIndex, parentIndices);
+        }
+
+        return _score;
+    }
+	
+    /**
+     * Takes ln(x) and ln(y) as input, and returns ln(x + y)
+     *
+     * @param lnX is natural log of x
+     * @param lnY is natural log of y
+     * @return natural log of x plus y
+     */
+    private static final int MININUM_EXPONENT = -1022;
+    protected double lnXpluslnY(double lnX, double lnY) {
+        double lnYminusLnX, temp;
+
+        if (lnY > lnX) {
+            temp = lnX;
+            lnX = lnY;
+            lnY = temp;
+        }
+
+        lnYminusLnX = lnY - lnX;
+
+        if (lnYminusLnX < MININUM_EXPONENT) {
+            return lnX;
+        } else {
+            return Math.log1p(Math.exp(lnYminusLnX)) + lnX;
+        }
+    }
+	
     public double probConstraint(BCInference.OP op, Node x, Node y, Node[] z) {
 
         int _x = indices.get(x) + 1;

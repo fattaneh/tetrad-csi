@@ -116,7 +116,6 @@ public final class GFci_IS implements GraphSearch {
 
         fges.setKnowledge(getKnowledge());
         fges.setVerbose(verbose);
-        fges.setNumPatternsToStore(0);
         fges.setFaithfulnessAssumed(faithfulnessAssumed);
         fges.setMaxDegree(maxDegree);
         fges.setOut(out);

@@ -30,21 +30,21 @@ import edu.cmu.tetrad.util.DelimiterUtils;
 public class TestISFGS_LOOCV {
 	public static void main(String[] args) {
 		
-		
-		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/Shyam-data/";
-		String dataName = "genims_mortality_4i";
-		String pathToData = pathToFolder + "GenIMS/" + dataName + ".csv";
-		String target = "day90_status";
+//		
+//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/Shyam-data/";
+//		String dataName = "genims_mortality_4i";
+//		String pathToData = pathToFolder + "GenIMS/" + dataName + ".csv";
+//		String target = "day90_status";
 		
 //		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/Shyam-data/";
 //		String dataName = "genims_sepsis_5i";
 //		String pathToData = pathToFolder + "GenIMS/" + dataName + ".csv";
 //		String target = "everss";
 		
-//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/Shyam-data/";
-//		String dataName = "port_all";
-//		String pathToData = pathToFolder + "PORT/" + dataName + ".csv";
-//		String target = "217.DIREOUT";
+		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/Shyam-data/";
+		String dataName = "port_all";
+		String pathToData = pathToFolder + "PORT/" + dataName + ".csv";
+		String target = "217.DIREOUT";
 	
 //		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/Shyam-data/";
 //		String dataName = "heart_death_di";
@@ -53,41 +53,52 @@ public class TestISFGS_LOOCV {
 		
 		// Read in the data
 		DataSet trainDataOrig = readData(pathToData);
-		
+		System.out.println(trainDataOrig.getNumRows() +", " + trainDataOrig.getNumColumns());
+
 		// Create the knowledge
 		IKnowledge knowledge = createKnowledge(trainDataOrig, target);
 
 		// learn the population model using all training data
-		double samplePrior = 1.0;
+		double samplePrior = 0.01;
 		double structurePrior = 1.0;
 		Graph graphP = BNlearn_pop(trainDataOrig, knowledge, samplePrior, structurePrior);
 		System.out.println("Pop graph:" + graphP.getEdges());
 
 		double T_plus = 0.9;
 		double T_minus = 0.1;
-		
+		boolean firstTime = true;
 		for (int p = 1; p <= 10; p++){
 
 			double k_add =  p/10.0; //Math.pow(10, -1.0*p);
-	
-			System.out.println("kappa = " + k_add);
-
+			
 			double[] probs_is = new double[trainDataOrig.getNumRows()];
 			double[] probs_p = new double[trainDataOrig.getNumRows()];
 			int[] truth = new int[trainDataOrig.getNumRows()];
 			Map <Key, Double> stats= new HashMap<Key, Double>();
 //			PrintStream out;
-			PrintStream outForAUC;
+			PrintStream outForAUC, logFile;
 			try {
 				File dir = new File( pathToFolder + "/outputs/" + dataName);
 				dir.mkdirs();
-				String outputFileName = dataName + "-AUROC-Kappa"+ k_add +".csv";
+				String outputFileName = dataName + "-AUROC-Kappa"+ k_add + "PESS" + samplePrior +".csv";
 				File fileAUC = new File(dir, outputFileName);
 				outForAUC = new PrintStream(new FileOutputStream(fileAUC));
+				outputFileName = dataName + "PESS" + samplePrior +"_log.txt";
+				fileAUC = new File(dir, outputFileName);
+				logFile = new PrintStream(new FileOutputStream(fileAUC));
+
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
+			if (firstTime){
+				logFile.println("Pop graph:" + graphP.getEdges());
+				logFile.println(trainDataOrig.getNumRows() +", " + trainDataOrig.getNumColumns());
 
+				firstTime = false;
+			}
+			System.out.println("kappa = " + k_add);
+			logFile.println("kappa = " + k_add);
+			
 
 			outForAUC.println("y, population-FGES, instance-specific-FGES");//, DEGs");
 
@@ -156,12 +167,20 @@ public class TestISFGS_LOOCV {
 			System.out.println( "AUROC: "+ auroc);
 			System.out.println( "FCR_P: "+ fcr_p);
 			System.out.println( "FCR: "+ fcr);
+			logFile.println( "AUROC_P: "+ auroc_p);
+			logFile.println( "AUROC: "+ auroc);
+			logFile.println( "FCR_P: "+ fcr_p);
+			logFile.println( "FCR: "+ fcr);
 
 			for (Key k : stats.keySet()){
 				System.out.println(k.print(k) + ":" + (stats.get(k)/trainDataOrig.getNumRows())*100);
+				logFile.println(k.print(k) + ":" + (stats.get(k)/trainDataOrig.getNumRows())*100);
+
 			}
 			System.out.println("-----------------");
+			logFile.println("-----------------");
 			outForAUC.close();
+			logFile.close();
 		}
 	}
 	
@@ -302,7 +321,6 @@ public class TestISFGS_LOOCV {
 		DataSet trainDataOrig = null;
 		try {
 			trainDataOrig = (DataSet) DataConvertUtils.toDataModel(trainDataReader.readInData());
-			System.out.println(trainDataOrig.getNumRows() +", " + trainDataOrig.getNumColumns());
 		} catch (Exception IOException) {
 			IOException.printStackTrace();
 		}

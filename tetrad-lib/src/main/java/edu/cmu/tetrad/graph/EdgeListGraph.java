@@ -1245,8 +1245,6 @@ public class EdgeListGraph implements Graph, TripleClassifier {
             // Do not comment this out; if the user changes the names of variables, this is the
             // mechanism for adjusting the maps from nodes to edge lists to compensate.
             edgeLists = new HashMap<>(edgeLists);
-            edgeList1 = edgeLists.get(edge.getNode1());
-            edgeList2 = edgeLists.get(edge.getNode2());
         }
 
         if (edgeList1 == null || edgeList2 == null) {
