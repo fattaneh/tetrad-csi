@@ -3,6 +3,7 @@ package edu.cmu.tetrad.algcomparison.algorithm.continuous.dag;
 import edu.cmu.tetrad.algcomparison.algorithm.Algorithm;
 import edu.cmu.tetrad.annotation.AlgType;
 import edu.cmu.tetrad.annotation.Bootstrapping;
+import edu.cmu.tetrad.annotation.Experimental;
 import edu.cmu.tetrad.data.DataModel;
 import edu.cmu.tetrad.data.DataSet;
 import edu.cmu.tetrad.data.DataType;
@@ -28,6 +29,7 @@ import java.util.List;
         dataType = DataType.Continuous
 )
 @Bootstrapping
+//@Experimental
 public class Lingam implements Algorithm {
 
     static final long serialVersionUID = 23L;
@@ -36,6 +38,9 @@ public class Lingam implements Algorithm {
         if (parameters.getInt(Params.NUMBER_RESAMPLING) < 1) {
             edu.cmu.tetrad.search.Lingam lingam = new edu.cmu.tetrad.search.Lingam();
             lingam.setPenaltyDiscount(parameters.getDouble(Params.PENALTY_DISCOUNT));
+            lingam.setFastIcaA(parameters.getDouble(Params.FAST_ICA_A));
+            lingam.setFastMaxIter(parameters.getInt(Params.FAST_ICA_MAX_ITER));
+            lingam.setFastIcaTolerance(parameters.getDouble(Params.FAST_ICA_TOLERANCE));
             return lingam.search(DataUtils.getContinuousDataSet(dataSet));
         } else {
             Lingam algorithm = new Lingam();
@@ -85,6 +90,9 @@ public class Lingam implements Algorithm {
         List<String> parameters = new ArrayList<>();
         parameters.add(Params.PENALTY_DISCOUNT);
         parameters.add(Params.VERBOSE);
+//        parameters.add(Params.FAST_ICA_A);
+        parameters.add(Params.FAST_ICA_MAX_ITER);
+        parameters.add(Params.FAST_ICA_TOLERANCE);
         return parameters;
     }
 }
