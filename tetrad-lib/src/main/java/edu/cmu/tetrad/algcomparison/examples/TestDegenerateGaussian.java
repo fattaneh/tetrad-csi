@@ -25,76 +25,83 @@ import edu.cmu.tetrad.algcomparison.Comparison;
 import edu.cmu.tetrad.algcomparison.algorithm.Algorithms;
 import edu.cmu.tetrad.algcomparison.algorithm.mixed.Mgm;
 import edu.cmu.tetrad.algcomparison.algorithm.oracle.pattern.*;
-import edu.cmu.tetrad.algcomparison.independence.ConditionalGaussianLRT;
+import edu.cmu.tetrad.algcomparison.graph.RandomForward;
+import edu.cmu.tetrad.algcomparison.independence.DegenerateGaussianLRT;
 import edu.cmu.tetrad.algcomparison.independence.FisherZ;
-//import edu.cmu.tetrad.algcomparison.independence.MNLRLRT;
-import edu.cmu.tetrad.algcomparison.independence.MNLRLRT;
-import edu.cmu.tetrad.algcomparison.independence.MVPLRT;
-import edu.cmu.tetrad.algcomparison.score.*;
+import edu.cmu.tetrad.algcomparison.independence.MultinomialLogisticRegressionWald;
+import edu.cmu.tetrad.algcomparison.score.BdeuScore;
+import edu.cmu.tetrad.algcomparison.score.ConditionalGaussianBicScore;
+import edu.cmu.tetrad.algcomparison.score.DegenerateGaussianBicScore;
+import edu.cmu.tetrad.algcomparison.score.SemBicScore;
+import edu.cmu.tetrad.algcomparison.simulation.*;
 import edu.cmu.tetrad.algcomparison.statistic.*;
 import edu.cmu.tetrad.util.Parameters;
 
 /**
- * An example script to load in data sets and graphs from files and analyze them. The
- * files loaded must be in the same format as
- * </p>
- * new Comparison().saveDataSetAndGraphs("comparison/save1", simulation, parameters);
- * </p>
- * saves them. For other formats, specialty data loaders can be written to implement the
- * Simulation interface.
+ * Test the degenerate Gaussian score.
  *
- * @author jdramsey
+ * @author bandrews
  */
-public class CompareFromFiles {
+public class TestDegenerateGaussian {
     public static void main(String... args) {
         Parameters parameters = new Parameters();
-
-        // Can leave the simulation parameters out since
-        // we're loading from file here.
-
         parameters.set("numRuns", 3);
-        parameters.set("maxDistinctValuesDiscrete", 5);
+        parameters.set("numMeasures", 100);
+        parameters.set("avgDegree", 2, 4);
+        parameters.set("maxDegree", 100);
+        parameters.set("numCategories", 3);
+        parameters.set("minCategories", 2);
+        parameters.set("maxCategories", 4);
+        parameters.set("differentGraphs", true);
 
-        parameters.set("structurePrior", -0.5);
-        parameters.set("fDegree", -1);
-        parameters.set("discretize", 0);
+//        parameters.set("varLow", 2.0);
+//        parameters.set("varHigh", 2.0);
 
-        parameters.set("alpha", 1e-3, 1e-4);
+        parameters.set("sampleSize", 1000);
+        parameters.set("percentDiscrete", 50);
+
+        parameters.set("penaltyDiscount", 1);
+        parameters.set("structurePrior", 1); // overloading parameters!
+        parameters.set("samplePrior", 1);
+        parameters.set("discretize", false);
+
+        parameters.set("alpha", 1e-2, 1e-3, 1e-4);
+        parameters.set("mgmParam1", 0.2);
+        parameters.set("mgmParam2", 0.2);
+        parameters.set("mgmParam3", 0.2);
+
+        parameters.set("verbose", false);
 
         Statistics statistics = new Statistics();
 
-        statistics.add(new ParameterColumn("avgDegree"));
-        statistics.add(new ParameterColumn("sampleSize"));
         statistics.add(new AdjacencyPrecision());
         statistics.add(new AdjacencyRecall());
         statistics.add(new ArrowheadPrecision());
         statistics.add(new ArrowheadRecall());
         statistics.add(new ElapsedTime());
 
-        statistics.setWeight("AP", 1.0);
-        statistics.setWeight("AR", 0.5);
-        statistics.setWeight("AHP", 1.0);
-        statistics.setWeight("AHR", 0.5);
 
         Algorithms algorithms = new Algorithms();
+        algorithms.add(new Fges(new ConditionalGaussianBicScore()));
+        algorithms.add(new Fges(new DegenerateGaussianBicScore()));
+        algorithms.add(new PcStable(new DegenerateGaussianLRT()));
+//        algorithms.add(new CpcStable(new MultinomialLogisticRegressionWald(), new Mgm()));
+//        algorithms.add(new Fges(new BdeuScore()));
 
-//        algorithms.add(new Fges(new ConditionalGaussianBicScore()));
-//        algorithms.add(new Fges(new ConditionalGaussianOtherBicScore()));
-        algorithms.add(new Fges(new MVPBicScore()));
-//        algorithms.add(new Fges(new MNLRBicScore()));
-//        algorithms.add(new Fges(new DiscreteMixedBicScore()));
-//        algorithms.add(new Cpc(new ConditionalGaussianLRT()));
-//        algorithms.add(new Cpc(new MVPLRT()));
-//        algorithms.add(new Cpc(new MNLRLRT(), new Mgm()));
+        Simulations simulations = new Simulations();
+        simulations.add(new ConditionalGaussianSimulation(new RandomForward()));
+        simulations.add(new LeeHastieSimulation(new RandomForward()));
+//        simulations.add(new BayesNetSimulation(new RandomForward()));
 
         Comparison comparison = new Comparison();
+
         comparison.setShowAlgorithmIndices(true);
         comparison.setShowSimulationIndices(true);
         comparison.setSortByUtility(false);
         comparison.setShowUtilities(false);
-        comparison.setComparisonGraph(Comparison.ComparisonGraph.true_DAG);
+        //comparison.setParallelized(false);
 
-        comparison.compareFromFiles("comparison", algorithms, statistics, parameters);
+        comparison.compareFromSimulations("comparison", simulations, algorithms, statistics, parameters);
     }
 }
 
