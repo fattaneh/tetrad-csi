@@ -33,6 +33,7 @@ public interface LocalDiscreteScore extends Score {
     void setSamplePrior(double samplePrior);
 
     DataSet getDataSet();
+
 }
 
 

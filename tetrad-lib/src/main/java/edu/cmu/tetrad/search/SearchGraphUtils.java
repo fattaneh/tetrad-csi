@@ -2583,7 +2583,6 @@ public final class SearchGraphUtils {
         Graph dag = iterator.next();
         return dag;
     }
-
     public static int structuralHammingDistance(Graph trueGraph, Graph estGraph) {
         int error = 0;
 
@@ -2615,14 +2614,143 @@ public final class SearchGraphUtils {
 
                 Edge e1 = G.getEdge(l1, l2);
                 Edge e2 = H.getEdge(l1, l2);
-
                 int shd = structuralHammingDistanceOneEdge(e1, e2);
+              
+                error += shd;
+            }
+        }
+        return error;
+    }
+
+    public static int structuralHammingDistance(Graph trueGraph, Graph estGraph, boolean strict) {
+        int error = 0;
+
+        estGraph = GraphUtils.replaceNodes(estGraph, trueGraph.getNodes());
+
+        Set<Node> _allNodes = new HashSet<>();
+
+        List<Node> trueLatents = trueGraph.getNodes();
+        List<Node> estLatents = estGraph.getNodes();
+
+//        List<Node> trueLatents = GraphUtils.getLatents(trueGraph);
+//        List<Node> estLatents = GraphUtils.getLatents(graph);
+        Graph u = trueGraph.subgraph(trueLatents);
+        Graph t = estGraph.subgraph(estLatents);
+
+        Graph G = u; //patternForDag(u);
+        Graph H = t; //patternForDag(t);
+
+//        System.out.println("Pattern of true graph over latents = " + G);
+        _allNodes.addAll(trueLatents);
+        _allNodes.addAll(estLatents);
+
+        List<Node> allNodes = new ArrayList<>(_allNodes);
+
+        for (int i1 = 0; i1 < allNodes.size(); i1++) {
+            for (int i2 = i1 + 1; i2 < allNodes.size(); i2++) {
+                Node l1 = allNodes.get(i1);
+                Node l2 = allNodes.get(i2);
+
+                Edge e1 = G.getEdge(l1, l2);
+                Edge e2 = H.getEdge(l1, l2);
+
+                int shd;
+                if (strict){
+                	 shd = structuralHammingDistanceOneEdgePAGStrict(e1, e2);	
+                }
+                else{
+               	 shd = structuralHammingDistanceOneEdgePAGLenient(e1, e2);	
+
+                }
+               
 
                 error += shd;
             }
         }
         return error;
     }
+    private static int structuralHammingDistanceOneEdgePAGStrict(Edge e1, Edge e2) {
+
+    	// noEdge vs other edge types
+    	if ((noEdge(e1) && !noEdge(e2)) || (!noEdge(e1) && noEdge(e2))) {
+    		return 1;
+    	}
+    	// undirected vs other edge types
+    	else if ((undirected(e1) && !undirected(e2)) || (!undirected(e1) && undirected(e2))) {
+    		return 1;
+    	}
+    	// nondirected vs other edge types
+    	else if ((nondirected(e1) && !nondirected(e2)) || (!nondirected(e1) && nondirected(e2))) {
+    		return 1;
+    	}
+    	// bidirected vs other edge types
+    	else if ((bidirected(e1) && !bidirected(e2)) || (!bidirected(e1) && bidirected(e2))) {
+    		return 1;
+    	}
+    	// directed vs other edge types
+    	else if ((directed(e1) && !directed(e2)) || (!directed(e1) && directed(e2))) {
+    		return 1;
+    	}
+    	else if (directed(e1) && directed(e2)) {
+    		if (Edges.getDirectedEdgeHead(e1) != Edges.getDirectedEdgeHead(e2)) {
+    			return 1;
+    		}
+    	} 
+    	// partially directed vs other edge types
+    	else if ((partiallydirected(e1) && !partiallydirected(e2)) || (!partiallydirected(e1) && partiallydirected(e2))) {
+    		return 1;
+    	}
+    	else if (partiallydirected(e1) || partiallydirected(e2)) {
+    		if (Edges.getDirectedEdgeHead(e1) != Edges.getDirectedEdgeHead(e2)) {
+    			return 1;
+    		}
+    	}
+    	
+    	return 0;
+    }
+    private static int structuralHammingDistanceOneEdgePAGLenient(Edge e1, Edge e2) {
+
+    	// noEdge vs other edge types
+    	if ((noEdge(e1) && !noEdge(e2)) || (!noEdge(e1) && noEdge(e2))) {
+    		return 1;
+    	}
+    	// undirected vs other edge types
+    	else if ((undirected(e1) && (directed(e2) || partiallydirected(e2) || bidirected(e2)))||
+    			(undirected(e2) && (directed(e1) || partiallydirected(e1) || bidirected(e1)))) {
+    		return 1;
+    	}
+    	// bidirected vs other edge types
+    	else if ((bidirected(e1) && (directed(e2) || undirected(e2)))||
+    			(bidirected(e2) && (directed(e1) || undirected(e1)))) {
+    		return 1;
+    	}
+    	// directed vs other edge types
+    	else if ((directed(e1) && (bidirected(e2)) || undirected(e2)) ||
+    			 (directed(e2) && (bidirected(e1)) || undirected(e1))){
+    		return 1;
+    	}
+    	else if ((directed(e1) && partiallydirected(e2)) ||
+    			 (directed(e2) && partiallydirected(e1))){
+    		if (Edges.getDirectedEdgeHead(e1) != Edges.getDirectedEdgeHead(e2)) {
+    			return 1;
+    		}
+    	} 
+    	// partiallydirected vs other edge types
+    	else if ((partiallydirected(e1) && undirected(e2)) || (undirected(e1) && partiallydirected(e2))) {
+    		return 1;
+    	}
+    	else if ((partiallydirected(e1) && (partiallydirected(e2) || directed(e2))) ||
+    			 (partiallydirected(e2) && (partiallydirected(e1) || directed(e1)))){
+//    		System.out.println(e1);
+//    		System.out.println(e2);
+    		if (Edges.getDirectedEdgeHead(e1) != Edges.getDirectedEdgeHead(e2)) {
+    			return 1;
+    		}
+    	}
+    	
+    	return 0;
+    }
+
 
     private static int structuralHammingDistanceOneEdge(Edge e1, Edge e2) {
         if (noEdge(e1) && undirected(e2)) {
@@ -2647,47 +2775,6 @@ public final class SearchGraphUtils {
 
         return 0;
     }
-    
-private static int structuralHammingDistanceOneEdgePAG(Edge e1, Edge e2) {
-		
-		// noEdge vs other edge types
-		if (noEdge(e1) && (undirected(e2) || nondirected(e2))) {
-			return 1;
-		} else if (noEdge(e2) && (undirected(e1) || nondirected(e1))) {
-			return 1;
-		} else if (noEdge(e1) && (directed(e2) || partiallydirected(e2) || bidirected(e2))) {
-			return 2;
-		} else if (noEdge(e2) && (directed(e1) || partiallydirected(e1) || bidirected(e1))) {
-			return 2;
-		}
-			
-		// undirected vs other edge types
-		else if (undirected(e1) && (directed(e2) || partiallydirected(e2) || bidirected(e2))) {
-			return 1;
-		} else if (undirected(e2) && (directed(e1) || partiallydirected(e1) || bidirected(e1))) {
-			return 1;
-		}
-		
-		// directed vs other edge types
-		else if (directed(e1) && directed(e2)) {
-			if (Edges.getDirectedEdgeHead(e1) == Edges.getDirectedEdgeTail(e2)) {
-				return 1;
-			}
-		} else if (directed(e1) && partiallydirected(e2)) {
-			if (Edges.getDirectedEdgeHead(e1) != Edges.getDirectedEdgeHead(e2)) {
-				return 1;
-			}
-		} else if (directed(e2) && partiallydirected(e1)) {
-			if (Edges.getDirectedEdgeHead(e1) != Edges.getDirectedEdgeHead(e2)) {
-				return 1;
-			}
-		} else if (directed(e1) && (bidirected(e2) || undirected(e2))) {
-			return 1;
-		} else if (directed(e2) && (bidirected(e1)|| undirected(e1))) {
-			return 1;
-		}
-		return 0;
-	}
 
     private static boolean directed(Edge e2) {
         return e2 != null && Edges.isDirectedEdge(e2);
@@ -2696,7 +2783,7 @@ private static int structuralHammingDistanceOneEdgePAG(Edge e1, Edge e2) {
     private static boolean partiallydirected(Edge e2) {
 		return e2 != null && Edges.isPartiallyOrientedEdge(e2);
 	}
-
+    
     private static boolean bidirected(Edge e2) {
         return e2 != null && Edges.isBidirectedEdge(e2);
     }
@@ -2704,14 +2791,16 @@ private static int structuralHammingDistanceOneEdgePAG(Edge e1, Edge e2) {
     private static boolean undirected(Edge e2) {
         return e2 != null && Edges.isUndirectedEdge(e2);
     }
-
+    
     private static boolean nondirected(Edge e2) {
-		return e2 != null && Edges.isNondirectedEdge(e2);
-	}
+  		return e2 != null && Edges.isNondirectedEdge(e2);
+  	}
 
     private static boolean noEdge(Edge e1) {
         return e1 == null;
     }
+    
+    
 
     public static int structuralHammingDistance3a(Graph trueGraph, Graph estGraph) {
         int error = 0;
@@ -2817,7 +2906,89 @@ private static int structuralHammingDistanceOneEdgePAG(Edge e1, Edge e2) {
                 edgesAdded, edgesRemoved, edgesReorientedFrom, edgesReorientedTo,
                 counts);
     }
-    
+
+    public static GraphUtils.GraphComparison getGraphComparison(Graph graph, Graph trueGraph, boolean isPAG) {
+        graph = GraphUtils.replaceNodes(graph, trueGraph.getNodes());
+
+        int adjFn = GraphUtils.countAdjErrors(trueGraph, graph);
+        int adjFp = GraphUtils.countAdjErrors(graph, trueGraph);
+        int adjCorrect = trueGraph.getNumEdges() - adjFn;
+
+        int arrowptFn = GraphUtils.countArrowptErrors(trueGraph, graph);
+        int arrowptFp = GraphUtils.countArrowptErrors(graph, trueGraph);
+        int arrowptCorrect = GraphUtils.getNumCorrectArrowpts(trueGraph, graph);
+
+        double adjPrec = (double) adjCorrect / (adjCorrect + adjFp);
+        double adjRec = (double) adjCorrect / (adjCorrect + adjFn);
+        double arrowptPrec = (double) arrowptCorrect / (arrowptCorrect + arrowptFp);
+        double arrowptRec = (double) arrowptCorrect / (arrowptCorrect + arrowptFn);
+
+        int twoCycleCorrect = 0;
+        int twoCycleFn = 0;
+        int twoCycleFp = 0;
+
+        List<Edge> edgesAdded = new ArrayList<>();
+        List<Edge> edgesRemoved = new ArrayList<>();
+        List<Edge> edgesReorientedFrom = new ArrayList<>();
+        List<Edge> edgesReorientedTo = new ArrayList<>();
+
+        for (Edge edge : trueGraph.getEdges()) {
+            Node n1 = edge.getNode1();
+            Node n2 = edge.getNode2();
+            if (!graph.isAdjacentTo(n1, n2)) {
+                Edge trueGraphEdge = trueGraph.getEdge(n1, n2);
+                Edge graphEdge = graph.getEdge(n1, n2);
+                edgesRemoved.add((trueGraphEdge == null) ? graphEdge : trueGraphEdge);
+            }
+//            if (!graph.isAdjacentTo(edge.getNode1(), edge.getNode2())) {
+//                edgesRemoved.add(Edges.undirectedEdge(edge.getNode1(), edge.getNode2()));
+//            }
+        }
+
+        for (Edge edge : graph.getEdges()) {
+            Node n1 = edge.getNode1();
+            Node n2 = edge.getNode2();
+            if (!trueGraph.isAdjacentTo(n1, n2)) {
+                Edge trueGraphEdge = trueGraph.getEdge(n1, n2);
+                Edge graphEdge = graph.getEdge(n1, n2);
+                edgesAdded.add((trueGraphEdge == null) ? graphEdge : trueGraphEdge);
+            }
+//            if (!trueGraph.isAdjacentTo(edge.getNode1(), edge.getNode2())) {
+//                edgesAdded.add(Edges.undirectedEdge(edge.getNode1(), edge.getNode2()));
+//            }
+        }
+
+        for (Edge edge : trueGraph.getEdges()) {
+            if (graph.containsEdge(edge)) {
+                continue;
+            }
+
+            Node node1 = edge.getNode1();
+            Node node2 = edge.getNode2();
+
+            for (Edge _edge : graph.getEdges(node1, node2)) {
+                if (edge.equals(_edge)) {
+                    continue;
+                }
+
+                edgesReorientedFrom.add(edge);
+                edgesReorientedTo.add(_edge);
+            }
+        }
+
+        int shd_strict = structuralHammingDistance(trueGraph, graph, true);
+        int shd_lenient = structuralHammingDistance(trueGraph, graph, false);
+
+        int[][] counts = graphComparison(graph, trueGraph, null);
+
+        return new GraphUtils.GraphComparison(
+                adjFn, adjFp, adjCorrect, arrowptFn, arrowptFp, arrowptCorrect,
+                adjPrec, adjRec, arrowptPrec, arrowptRec, shd_strict, shd_lenient,
+                twoCycleCorrect, twoCycleFn, twoCycleFp,
+                edgesAdded, edgesRemoved, edgesReorientedFrom, edgesReorientedTo,
+                counts);
+    }
+
     public static GraphUtils.GraphComparison getGraphComparison(Graph graph, Graph trueGraph, Map<Node, Boolean> context) {
 
     	graph = GraphUtils.replaceNodes(graph, trueGraph.getNodes());

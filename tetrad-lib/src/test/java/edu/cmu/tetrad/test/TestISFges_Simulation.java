@@ -34,16 +34,16 @@ public class TestISFges_Simulation {
 	private ConcurrentMap<Node, Integer> hashIndices ;
 	private PrintStream out;
 	public static void main(String[] args) {
-		
+
 		TestISFges_Simulation t = new TestISFges_Simulation();
-		t.testSimulation();
+		t.test1();
 	}
 
 	public void testSimulation(){
 		RandomUtil.getInstance().setSeed(1454147770L);
 		int[] numVarss = new int[]{50};
 		double[] edgesPerNodes = new double[]{1.0};
-		int numCases = 1000;
+		int numCases = 5000;
 		int numTests = 500;
 		int minCat = 2;
 		int maxCat = 3;
@@ -75,16 +75,16 @@ public class TestISFges_Simulation {
 				double[] avgcsi = new double[numSim];
 				double samplePrior = 1.0;
 				try {
-		            File dir = new File("/Users/fattanehjabbari/CCD-Project/CS-BN/simulation-newprior/PESS"+samplePrior+"/");
-		            
-		            dir.mkdirs();
-		            String outputFileName = "V"+numVars +"-E"+ edgesPerNode +"-kadd" + k_add+"-kdel" + k_delete+"-krev" + k_reverse+ "-PESS" + samplePrior+"-np.csv";
+					File dir = new File("/Users/fattanehjabbari/CCD-Project/CS-BN/simulation-newprior/PESS"+samplePrior+"/");
+
+					dir.mkdirs();
+					String outputFileName = "V"+numVars +"-E"+ edgesPerNode +"-kadd" + k_add+"-kdel" + k_delete+"-krev" + k_reverse+ "-PESS" + samplePrior+"-np.csv";
 					File file = new File(dir, outputFileName);
-		            this.out = new PrintStream(new FileOutputStream(file));
-		        } catch (Exception e) {
-		            throw new RuntimeException(e);
-		        }
-				
+					this.out = new PrintStream(new FileOutputStream(file));
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+
 				// loop over simulations
 				for (int s = 0; s < numSim; s++){
 
@@ -102,16 +102,16 @@ public class TestISFges_Simulation {
 
 					// generate true BN and its parameters
 					Graph trueBN = GraphUtils.randomGraphRandomForwardEdges(vars, 0, numEdges, 30, 15, 15, false, true);
-//					for (Node nod: trueBN.getNodes()){
-//						if (trueBN.getIndegree(nod)>1)
-//							avgInDeg2 = avgInDeg2 + 1;
-//						if (trueBN.getOutdegree(nod)>1)
-//							avgOutDeg2  = avgOutDeg2 +1;
-//					}
+					//					for (Node nod: trueBN.getNodes()){
+					//						if (trueBN.getIndegree(nod)>1)
+					//							avgInDeg2 = avgInDeg2 + 1;
+					//						if (trueBN.getOutdegree(nod)>1)
+					//							avgOutDeg2  = avgOutDeg2 +1;
+					//					}
 					BayesPm pm = new BayesPm(trueBN, minCat, maxCat);
 					ISMlBayesIm im = new ISMlBayesIm(pm, ISMlBayesIm.RANDOM);
-//					System.out.println(im);
-					
+					//					System.out.println(im);
+
 					// simulate train and test data from BN
 					DataSet trainData = im.simulateData(numCases, false, tiers);
 					DataSet testData = im.simulateData(numTests, false, tiers);
@@ -126,12 +126,12 @@ public class TestISFges_Simulation {
 					// estimate MAP parameters from the population model
 					DagInPatternIterator iterator = new DagInPatternIterator(graphP);
 					Graph dagP = iterator.next();
-//					dagP = GraphUtils.replaceNodes(dagP, trainData.getVariables());
+					//					dagP = GraphUtils.replaceNodes(dagP, trainData.getVariables());
 
-//					BayesPm pmP = new BayesPm(dagP);
-//					//			BayesPm pmP = new BayesPm(graphP);
-//					DirichletBayesIm priorP = DirichletBayesIm.symmetricDirichletIm(pmP, 1.0);
-//					BayesIm imP = DirichletEstimator.estimate(priorP, trainData);
+					//					BayesPm pmP = new BayesPm(dagP);
+					//					//			BayesPm pmP = new BayesPm(graphP);
+					//					DirichletBayesIm priorP = DirichletBayesIm.symmetricDirichletIm(pmP, 1.0);
+					//					BayesIm imP = DirichletEstimator.estimate(priorP, trainData);
 					//			System.out.println("trueBN: " + trueBN);
 					double arrIRc = 0.0, arrNRc = 0.0, arrRc = 0.0, arrIRIc = 0.0, arrNRIc = 0.0, arrRIc = 0.0;
 					double adjIRc = 0.0, adjNRc = 0.0, adjRc = 0.0, adjIRIc = 0.0, adjNRIc = 0.0, adjRIc = 0.0;
@@ -139,19 +139,19 @@ public class TestISFges_Simulation {
 					for (int i = 0; i < testData.getNumRows(); i++){
 						DataSet test = testData.subsetRows(new int[]{i});
 						if (i%100 == 0) {System.out.println(i);}
-//						System.out.println("test: " + test);
+						//						System.out.println("test: " + test);
 
 						// obtain the true instance-specific BN
 						Map <Node, Boolean> context= new HashMap<Node, Boolean>();
 						Graph trueBNI = SearchGraphUtils.patternForDag(new EdgeListGraph(GraphUtils.getISGraph(trueBN, im, test, context)));
-//						System.out.println("context: " + context);
-						
+						//						System.out.println("context: " + context);
+
 						for (Node n: context.keySet()){
 							if (context.get(n)){
 								avgcsi[s] += 1;
 							}
 						}
-					
+
 						// learn the instance-specific model
 						ISBDeuScore scoreI = new ISBDeuScore(trainData, test);
 						scoreI.setKAddition(k_add);
@@ -162,10 +162,10 @@ public class TestISFges_Simulation {
 						fgesI.setPopulationGraph(graphP);
 						fgesI.setInitialGraph(graphP);
 						Graph graphI = fgesI.search();
-					
+
 						ArrowConfusionIS congI = new ArrowConfusionIS(trueBNI, GraphUtils.replaceNodes(graphI, trueBNI.getNodes()), context);
 						AdjacencyConfusionIS conAdjGI = new AdjacencyConfusionIS(trueBNI, GraphUtils.replaceNodes(graphI, trueBNI.getNodes()), context);
-						
+
 						double den = (congI.getArrowsITp() + congI.getArrowsIFp());
 						if (den != 0.0){
 							arrIPI[s] += (congI.getArrowsITp() / den);
@@ -305,7 +305,7 @@ public class TestISFges_Simulation {
 						addedI[s] += cmpI.getEdgesAdded().size();
 						removedI[s] += cmpI.getEdgesRemoved().size();
 						reorientedI[s] += cmpI.getEdgesReorientedTo().size();
-						
+
 						added[s] += cmpP.getEdgesAdded().size();
 						removed[s] += cmpP.getEdgesRemoved().size();
 						reoriented[s] += cmpP.getEdgesReorientedTo().size();
@@ -318,27 +318,27 @@ public class TestISFges_Simulation {
 						addedI_Other[s] += cmpI2.getEdgesAddedOther().size();
 						removedI_Other[s] += cmpI2.getEdgesRemovedOther().size();
 						reorientedI_Other[s] += cmpI2.getEdgesReorientedToOther().size();
-						
+
 						addedIS[s] += cmpP2.getEdgesAddedIS().size();
 						removedIS[s] += cmpP2.getEdgesRemovedIS().size();
 						reorientedIS[s] += cmpP2.getEdgesReorientedToIS().size();
 						addedOther[s] += cmpP2.getEdgesAddedOther().size();
 						removedOther[s] += cmpP2.getEdgesRemovedOther().size();
 						reorientedOther[s] += cmpP2.getEdgesReorientedToOther().size();
-						
+
 						//// learn a pop model from data + test
 						//DataSet data = DataUtils.concatenate(trainData, test);
 						DagInPatternIterator iteratorI = new DagInPatternIterator(graphI);
 						Graph dagI = iteratorI.next();
-//						BayesPm pmI = new BayesPm(dagI);
-//						//				BayesPm pmI = new BayesPm(graphI);
-//						//System.out.println("dagI: " + dagI);
-//						DirichletBayesIm priorI = DirichletBayesIm.symmetricDirichletIm(pmI, 1.0);
-//						BayesIm imI = DirichletEstimator.estimate(priorI, trainData);
+						//						BayesPm pmI = new BayesPm(dagI);
+						//						//				BayesPm pmI = new BayesPm(graphI);
+						//						//System.out.println("dagI: " + dagI);
+						//						DirichletBayesIm priorI = DirichletBayesIm.symmetricDirichletIm(pmI, 1.0);
+						//						BayesIm imI = DirichletEstimator.estimate(priorI, trainData);
 
 						//llrI[s] += getLikelihood(imI, test) - getLikelihood(im, test);
 						llr[s] += fgesI.scoreDag(dagI) - fgesI.scoreDag(dagP);
-						
+
 					}
 					avgcsi[s] /= (numVars * numTests);
 					System.out.println("avgsci : "+ avgcsi[s]);
@@ -358,7 +358,7 @@ public class TestISFges_Simulation {
 					addedI[s] /= numTests;
 					removedI[s] /= numTests;
 					reorientedI[s] /= numTests;
-					
+
 					addedI_IS[s] /= numTests;
 					removedI_IS[s] /= numTests;
 					reorientedI_IS[s] /= numTests;
@@ -389,10 +389,10 @@ public class TestISFges_Simulation {
 					removedOther[s] /= numTests;
 					reorientedOther[s] /= numTests;
 					llr[s] /= numTests;
-					
+
 
 				}
-//						printRes("CSI", numSim, adjIPI, adjNPI, adjPI, adjIRI, adjNRI, adjRI, addedI, removedI, reorientedI, llr);
+				//						printRes("CSI", numSim, adjIPI, adjNPI, adjPI, adjIRI, adjNRI, adjRI, addedI, removedI, reorientedI, llr);
 				printRes(this.out, "CSI", numSim, arrIPI, arrNPI, arrPI, arrIRI, arrNRI, arrRI, adjIPI, adjNPI, adjPI, adjIRI, adjNRI, adjRI, addedI, removedI, reorientedI, addedI_IS, removedI_IS, reorientedI_IS, addedI_Other, removedI_Other, reorientedI_Other, llr);
 
 				//		printRes("POP", numSim, adjIP, adjNP, adjP, adjIR, adjNR, adjR, added, removed, reoriented, llr);
@@ -408,20 +408,25 @@ public class TestISFges_Simulation {
 
 	public void test1(){
 		int numVars = 4;
-		int numCases = 2000;
+		int numCases = 10000;
 		int minCat = 2;
 		int maxCat = 2;
 
 		List<Node> vars = new ArrayList<>();
-		for (int i = 0; i < numVars; i++) {
-			vars.add(new DiscreteVariable("X" + i));
-		}
+//		for (int i = 0; i < numVars; i++) {
+//			vars.add(new DiscreteVariable("A" + i));
+//		}
+		vars.add(new DiscreteVariable("A"));
+		vars.add(new DiscreteVariable("B"));
+		vars.add(new DiscreteVariable("C"));
+		vars.add(new DiscreteVariable("D"));
+
 
 		Graph dag = new EdgeListGraph(vars);
-		dag.addDirectedEdge(dag.getNode("X0"), dag.getNode("X2"));
-		dag.addDirectedEdge(dag.getNode("X1"), dag.getNode("X2"));
-		dag.addDirectedEdge(dag.getNode("X2"), dag.getNode("X3"));
-		dag.addDirectedEdge(dag.getNode("X1"), dag.getNode("X3"));
+		dag.addDirectedEdge(dag.getNode("A"), dag.getNode("C"));
+		dag.addDirectedEdge(dag.getNode("B"), dag.getNode("C"));
+		dag.addDirectedEdge(dag.getNode("C"), dag.getNode("D"));
+		dag.addDirectedEdge(dag.getNode("B"), dag.getNode("D"));
 		BayesPm pm = new BayesPm(dag, minCat, maxCat);
 		MlBayesIm im = new MlBayesIm(pm, MlBayesIm.MANUAL);
 		im.setProbability(0, 0, 0, 0.75);
@@ -438,103 +443,113 @@ public class TestISFges_Simulation {
 		im.setProbability(2, 3, 1, 0.35);
 		im.setProbability(3, 0, 0, 0.6);
 		im.setProbability(3, 1, 0, 0.25);
-		im.setProbability(3, 2, 0, 0.9);
-		im.setProbability(3, 3, 0, 0.9);
+		im.setProbability(3, 2, 0, 0.1);
+		im.setProbability(3, 3, 0, 0.1);
 		im.setProbability(3, 0, 1, 0.4);
 		im.setProbability(3, 1, 1, 0.75);
-		im.setProbability(3, 2, 1, 0.1);
-		im.setProbability(3, 3, 1, 0.1);
+		im.setProbability(3, 2, 1, 0.9);
+		im.setProbability(3, 3, 1, 0.9);
 
 		System.out.println("IM:" + im);
 		DataSet data = im.simulateData(numCases, false);
 		DataSet test = im.simulateData(1, false);
-		test.setDouble(0, 0, 1);
-		test.setDouble(0, 1, 1);
-		test.setDouble(0, 2, 1);
-		test.setDouble(0, 3, 1);
-		
+		test.setDouble(0, 0, 0);
+		test.setDouble(0, 1, 0);
+		test.setDouble(0, 2, 0);
+		test.setDouble(0, 3, 0);
+
 		BDeuScore popScore = new BDeuScore(data);
 		popScore.setSamplePrior(1);
 		Fges popFges = new Fges (popScore);
+		popFges.setVerbose(true);
 		Graph outP = popFges.search();
+		System.out.println("*************************************");
+		
 		ISBDeuScore csi = new ISBDeuScore(data, test);
+		csi.setKAddition(0.5);
+		csi.setKDeletion(0.5);
+		csi.setKReorientation(0.5);
 		csi.setSamplePrior(1);
 		ISFges fgs = new ISFges(csi);
 		fgs.setPopulationGraph(SearchGraphUtils.chooseDagInPattern(outP));
 		fgs.setInitialGraph(SearchGraphUtils.chooseDagInPattern(outP));
 		fgs.setVerbose(true);
 		Graph out = fgs.search();
-		
+//		IndTestDSep pct= new IndTestDSep(dag);
+//		pct.setVerbose(true);
+//		Cpc pc = new Cpc(pct);
+//		Graph pcg = pc.search();
+//		System.out.println("pc facts: " + pct.getFacts());
 		System.out.println("test: " +test);
 		System.out.println("Dag: "+dag);
 		System.out.println("Pop: " + outP);//SearchGraphUtils.chooseDagInPattern(outP));
 		System.out.println("IS: " + out+"\n");//(SearchGraphUtils.chooseDagInPattern(out)));
 		System.out.println("PS_score = " + fgs.scoreDag(SearchGraphUtils.chooseDagInPattern(out))+"\n");
 		System.out.println("Pop_score = " + popFges.scoreDag(SearchGraphUtils.chooseDagInPattern(outP)));
-		
+
 	}
-	
-	public void test3(){
-		int numCases = 300;
-		int minCat = 2;
-		int maxCat = 2;
 
-		List<Node> vars = new ArrayList<>();
-//		for (int i = 0; i < numVars; i++) {
-		vars.add(new DiscreteVariable("Y"));
-		vars.add(new DiscreteVariable("Z"));
-		vars.add(new DiscreteVariable("X"));
-
-//		}
-
-		Graph dag = new EdgeListGraph(vars);
-		dag.addDirectedEdge(dag.getNode("Y"), dag.getNode("X"));
-		dag.addDirectedEdge(dag.getNode("Z"), dag.getNode("X"));
-		
-		BayesPm pm = new BayesPm(dag, minCat, maxCat);
-		MlBayesIm im = new MlBayesIm(pm, MlBayesIm.MANUAL);
-		im.setProbability(0, 0, 0, 0.75);
-		im.setProbability(0, 0, 1, 0.25);
-		im.setProbability(1, 0, 0, 0.51);
-		im.setProbability(1, 0, 1, 0.49);
-		im.setProbability(2, 0, 0, 0.9);
-		im.setProbability(2, 0, 1, 0.1);
-		im.setProbability(2, 1, 0, 0.9);
-		im.setProbability(2, 1, 1, 0.1);
-		im.setProbability(2, 2, 0, 0.23);
-		im.setProbability(2, 2, 1, 0.77);
-		im.setProbability(2, 3, 0, 0.52);
-		im.setProbability(2, 3, 1, 0.48);
-		
-
-		System.out.println("IM:" + im);
-		DataSet data = im.simulateData(numCases, false);
-		DataSet test = im.simulateData(1, false);
-		test.setDouble(0, 0, 0);
-		test.setDouble(0, 1, 1);
-		test.setDouble(0, 2, 1);
-		
-		BDeuScore popScore = new BDeuScore(data);
-		Fges popFges = new Fges (popScore);
-		Graph outP = popFges.search();
-
-		ISBDeuScore csi = new ISBDeuScore(data, test);
-		ISFges fgs = new ISFges(csi);
-		fgs.setPopulationGraph(SearchGraphUtils.chooseDagInPattern(outP));
-//		fgs.setInitialGraph(SearchGraphUtils.chooseDagInPattern(outP));
-		Graph out = fgs.search();
-		
-		System.out.println("test: " +test);
-		System.out.println("dag: "+dag);
-		System.out.println("Pop: " + outP);
-		System.out.println("IS: " + out + "\n");
-		System.out.println("IS_score = " + fgs.scoreDag(SearchGraphUtils.chooseDagInPattern(out))+"\n");
-		System.out.println("Pop_score = " + fgs.scoreDag(SearchGraphUtils.chooseDagInPattern(outP)));
-		
-	}
+//	public void test3(){
+//		int numCases = 300;
+//		int minCat = 2;
+//		int maxCat = 2;
+//
+//		List<Node> vars = new ArrayList<>();
+//		//		for (int i = 0; i < numVars; i++) {
+//		vars.add(new DiscreteVariable("Y"));
+//		vars.add(new DiscreteVariable("Z"));
+//		vars.add(new DiscreteVariable("X"));
+//
+//		//		}
+//
+//		Graph dag = new EdgeListGraph(vars);
+//		dag.addDirectedEdge(dag.getNode("Y"), dag.getNode("X"));
+//		dag.addDirectedEdge(dag.getNode("Z"), dag.getNode("X"));
+//
+//		BayesPm pm = new BayesPm(dag, minCat, maxCat);
+//		MlBayesIm im = new MlBayesIm(pm, MlBayesIm.MANUAL);
+//		im.setProbability(0, 0, 0, 0.75);
+//		im.setProbability(0, 0, 1, 0.25);
+//		im.setProbability(1, 0, 0, 0.51);
+//		im.setProbability(1, 0, 1, 0.49);
+//		im.setProbability(2, 0, 0, 0.9);
+//		im.setProbability(2, 0, 1, 0.1);
+//		im.setProbability(2, 1, 0, 0.9);
+//		im.setProbability(2, 1, 1, 0.1);
+//		im.setProbability(2, 2, 0, 0.23);
+//		im.setProbability(2, 2, 1, 0.77);
+//		im.setProbability(2, 3, 0, 0.52);
+//		im.setProbability(2, 3, 1, 0.48);
+//
+//
+//		System.out.println("IM:" + im);
+//		DataSet data = im.simulateData(numCases, false);
+//		DataSet test = im.simulateData(1, false);
+//		test.setDouble(0, 0, 0);
+//		test.setDouble(0, 1, 1);
+//		test.setDouble(0, 2, 1);
+//
+//		BDeuScore popScore = new BDeuScore(data);
+//		Fges popFges = new Fges (popScore);
+//		Graph outP = popFges.search();
+//
+//		ISBDeuScore csi = new ISBDeuScore(data, test);
+//		ISFges fgs = new ISFges(csi);
+//		fgs.setPopulationGraph(SearchGraphUtils.chooseDagInPattern(outP));
+//		//		fgs.setInitialGraph(SearchGraphUtils.chooseDagInPattern(outP));
+//		Graph out = fgs.search();
+//
+//		System.out.println("test: " +test);
+//		System.out.println("dag: "+dag);
+//		System.out.println("Pop: " + outP);
+//		System.out.println("IS: " + out + "\n");
+//		System.out.println("IS_score = " + fgs.scoreDag(SearchGraphUtils.chooseDagInPattern(out))+"\n");
+//		System.out.println("Pop_score = " + fgs.scoreDag(SearchGraphUtils.chooseDagInPattern(outP)));
+//
+//	}
 	private void printRes(PrintStream out, String alg, int numSim, double[] arrIPI, double[] arrNPI, double[] arrPI, double[] arrIRI, double[] arrNRI, double[] arrRI, double[] adjIPI, double[] adjNPI, double[] adjPI, double[] adjIRI, double[] adjNRI, double[] adjRI, double[] addedI, double[] removedI, double[] reorientedI, double[] addedI_IS, double[] removedI_IS, double[] reorientedI_IS, double[] addedI_Other, double[] removedI_Other, double[] reorientedI_Other, double[] llrI){
 		NumberFormat nf = new DecimalFormat("0.00");
-//		NumberFormat smallNf = new DecimalFormat("0.00E0");
+		//		NumberFormat smallNf = new DecimalFormat("0.00E0");
 
 		TextTable table = new TextTable(numSim+2, 8);
 		table.setTabDelimited(true);
@@ -589,35 +604,35 @@ public class TestISFges_Simulation {
 		out.println(table);
 		System.out.println(table);		
 	}
-//	private double getLikelihood(BayesIm im, DataSet dataSet) {
-//
-//		double lik = 0.0;
-//
-//		ROW:
-//			for (int i = 0; i < dataSet.getNumRows(); i++) {
-//				double lik0 = 0.0;
-//
-//				for (int j = 0; j < dataSet.getNumColumns(); j++) {
-//					int[] parents = im.getParents(j);
-//					int[] parentValues = new int[parents.length];
-//
-//					for (int k = 0; k < parents.length; k++) {
-//						parentValues[k] = dataSet.getInt(i, parents[k]);
-//					}
-//
-//					int dataValue = dataSet.getInt(i, j);
-//					double p = im.getProbability(j, im.getRowIndex(j, parentValues), dataValue);
-//
-//					if (p == 0) continue ROW;
-//
-//					lik0 += Math.log(p);
-//				}
-//
-//				lik += lik0;
-//			}
-//
-//		return lik;
-//	}
+	//	private double getLikelihood(BayesIm im, DataSet dataSet) {
+	//
+	//		double lik = 0.0;
+	//
+	//		ROW:
+	//			for (int i = 0; i < dataSet.getNumRows(); i++) {
+	//				double lik0 = 0.0;
+	//
+	//				for (int j = 0; j < dataSet.getNumColumns(); j++) {
+	//					int[] parents = im.getParents(j);
+	//					int[] parentValues = new int[parents.length];
+	//
+	//					for (int k = 0; k < parents.length; k++) {
+	//						parentValues[k] = dataSet.getInt(i, parents[k]);
+	//					}
+	//
+	//					int dataValue = dataSet.getInt(i, j);
+	//					double p = im.getProbability(j, im.getRowIndex(j, parentValues), dataValue);
+	//
+	//					if (p == 0) continue ROW;
+	//
+	//					lik0 += Math.log(p);
+	//				}
+	//
+	//				lik += lik0;
+	//			}
+	//
+	//		return lik;
+	//	}
 
 
 }

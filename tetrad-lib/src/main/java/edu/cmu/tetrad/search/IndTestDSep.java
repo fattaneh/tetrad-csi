@@ -50,6 +50,7 @@ public class IndTestDSep implements IndependenceTest {
     private Set<Node> observedVars;
     private List<Node> _observedVars;
     private HashSet<IndependenceFact> facts;
+    private Map<IndependenceFact, Double> H;
     private boolean verbose = false;
     private double pvalue = 0;
 
@@ -69,6 +70,7 @@ public class IndTestDSep implements IndependenceTest {
 
         this._observedVars = calcVars(graph, keepLatents);
         this.observedVars = new HashSet<>(_observedVars);
+        this.H = new HashMap<>();
     }
 
     /**
@@ -96,7 +98,7 @@ public class IndTestDSep implements IndependenceTest {
         this.observedVars = new HashSet<>(_observedVars);
 
         facts = new HashSet<>();
-
+        this.H = new HashMap<>();
         return this;
     }
 
@@ -166,14 +168,20 @@ public class IndTestDSep implements IndependenceTest {
             }
         }
 
+        IndependenceFact key = new IndependenceFact(x, y, z);
         if (dSeparated) {
+
             if (this.facts != null) {
-                this.facts.add(new IndependenceFact(x, y, z));
+                this.facts.add(new IndependenceFact(x, y, z));  
             }
 
             pvalue = 1.0;
+        	this.H.put(key, pvalue);
+
         } else {
             pvalue = 0.0;
+        	this.H.put(key, pvalue);
+
         }
 
         return dSeparated;
@@ -311,6 +319,10 @@ public class IndTestDSep implements IndependenceTest {
         return facts;
     }
 
+    public Map<IndependenceFact, Double> getH() {
+        return new HashMap<>(H);
+    }
+    
     public boolean isVerbose() {
         return verbose;
     }
@@ -318,7 +330,6 @@ public class IndTestDSep implements IndependenceTest {
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
     }
-
     
 }
 

@@ -132,9 +132,9 @@ public class RBExperiments {
 
 		// read and process input arguments
 		double alpha = 0.05, numLatentConfounders = 0, lower = 0.3, upper = 0.7;
-		int numCases = 100, numModels = 5, numBootstrapSamples = 10, round = 0;
-		String modelName = "Alarm", filePath = "/Users/chw20/Documents/DBMI/bsc-results",
-				dataPath = System.getProperty("user.dir");
+		int numCases = 1000, numModels = 10, numBootstrapSamples = 500, round = 0;
+		String modelName = "Alarm", filePath = "/Users/fattanehjabbari/CCD-Project/CS-BN/bsc-results/",
+				dataPath = "/Users/fattanehjabbari/CCD-Project/CS-BN/";
 		boolean threshold1 = false, threshold2 = true;
 		for (int i = 0; i < args.length; i++) {
 			switch (args[i]) {
@@ -205,6 +205,7 @@ public class RBExperiments {
 
 		// get the Bayesian network (graph and parameters) of the given model
 		BayesIm im = getBayesIM(modelName);
+		System.out.println("im:" + im);
 		BayesPm pm = im.getBayesPm();
 		Graph dag = pm.getDag();
 

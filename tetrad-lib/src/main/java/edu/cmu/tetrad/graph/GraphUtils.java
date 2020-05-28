@@ -4312,7 +4312,7 @@ public final class GraphUtils {
         private double arrowptPrec;
         private double arrowptRec;
 
-        private int shd;
+        private int shd, shd_strict, shd_lenient;
         private int twoCycleFn;
         private int twoCycleFp;
         private int twoCycleCorrect;
@@ -4330,6 +4330,8 @@ public final class GraphUtils {
 		private List<Edge> edgesRemovedOther;
 		private List<Edge> edgesReorientedFromOther;
 		private List<Edge> edgesReorientedToOther;
+		
+		
 		
         public GraphComparison(int adjFn, int adjFp, int adjCorrect,
                 int arrowptFn, int arrowptFp, int arrowptCorrect,
@@ -4353,6 +4355,40 @@ public final class GraphUtils {
             this.arrowptRec = arrowptRec;
 
             this.shd = shd;
+            this.twoCycleCorrect = twoCycleCorrect;
+            this.twoCycleFn = twoCycleFn;
+            this.twoCycleFp = twoCycleFp;
+            this.edgesAdded = edgesAdded;
+            this.edgesRemoved = edgesRemoved;
+            this.edgesReorientedFrom = edgesReorientedFrom;
+            this.edgesReorientedTo = edgesReorientedTo;
+
+            this.counts = counts;
+        }
+        
+        public GraphComparison(int adjFn, int adjFp, int adjCorrect,
+                int arrowptFn, int arrowptFp, int arrowptCorrect,
+                double adjPrec, double adjRec, double arrowptPrec, double arrowptRec,
+                int shd_strict, int shd_lenient,
+                int twoCycleCorrect, int twoCycleFn, int twoCycleFp,
+                List<Edge> edgesAdded, List<Edge> edgesRemoved,
+                List<Edge> edgesReorientedFrom,
+                List<Edge> edgesReorientedTo,
+                int[][] counts) {
+            this.adjFn = adjFn;
+            this.adjFp = adjFp;
+            this.adjCorrect = adjCorrect;
+            this.arrowptFn = arrowptFn;
+            this.arrowptFp = arrowptFp;
+            this.arrowptCorrect = arrowptCorrect;
+
+            this.adjPrec = adjPrec;
+            this.adjRec = adjRec;
+            this.arrowptPrec = arrowptPrec;
+            this.arrowptRec = arrowptRec;
+
+            this.shd_strict = shd_strict;
+            this.shd_lenient = shd_lenient;
             this.twoCycleCorrect = twoCycleCorrect;
             this.twoCycleFn = twoCycleFn;
             this.twoCycleFp = twoCycleFp;
@@ -4409,6 +4445,14 @@ public final class GraphUtils {
 
         public int getShd() {
             return shd;
+        }
+        
+        public int getShdStrict() {
+            return shd_strict;
+        }
+        
+        public int getShdLenient() {
+            return shd_lenient;
         }
 
         public int getTwoCycleFn() {

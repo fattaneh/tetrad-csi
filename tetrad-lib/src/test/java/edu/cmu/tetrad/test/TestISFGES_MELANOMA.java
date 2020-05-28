@@ -32,8 +32,10 @@ public class TestISFGES_MELANOMA {
 
 		String workingDirectory = System.getProperty("user.dir");
 		System.out.println(workingDirectory);
+		
+ 		Path trainDataFile = Paths.get("/Users/fattanehjabbari/CCD-Project/CS-BN/Xinghua's_Data/gsva_dis_20.csv");
 
- 		Path trainDataFile = Paths.get("/Users/fattanehjabbari/CCD-Project/CS-BN/TDI_DEG/DEGmatrix.UPMCcell4greg.TDIDEGfeats.csv");
+// 		Path trainDataFile = Paths.get("/Users/fattanehjabbari/CCD-Project/CS-BN/TDI_DEG/DEGmatrix.UPMCcell4greg.TDIDEGfeats.csv");
 //		Path trainDataFile = Paths.get("/Users/fattanehjabbari/CCD-Project/CS-BN/TDI_DEG/DEGmatrix.UPMCcell4greg.allDEGfeats.csv");
 
 		char delimiter = ',';
@@ -65,7 +67,6 @@ public class TestISFGES_MELANOMA {
 		BDeuScore scoreP = new BDeuScore(trainDataOrig);
 		double structPrior = 1.0;
 		scoreP.setStructurePrior(structPrior);
-		System.out.println(scoreP.localScore(514));
 		Fges fgesP = new Fges (scoreP);
 		fgesP.setKnowledge(knowledge);
 //		fgesP.setSymmetricFirstStep(false);
@@ -241,29 +242,4 @@ public class TestISFGES_MELANOMA {
         return list.stream().collect(Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b, LinkedHashMap::new));
 
     }
-}
-class Key {
-
-	public final int n_a;
-	public final int n_d;
-
-	public Key(final int n_a, final int n_d) {
-		this.n_a = n_a;
-		this.n_d = n_d;
-	}
-	@Override
-	public boolean equals (final Object O) {
-		if (!(O instanceof Key)) return false;
-		if (((Key) O).n_a != n_a) return false;
-		if (((Key) O).n_d != n_d) return false;
-		return true;
-	}
-	 @Override
-	 public int hashCode() {
-		 return this.n_a ^ this.n_d;
-	 }
-	 public String print(Key key){
-		return "("+key.n_a +", "+ key.n_d + ")";
-	 }
-
 }

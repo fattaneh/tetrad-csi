@@ -1137,6 +1137,7 @@ public final class BoxDataSet implements DataSet, TetradSerializable {
 
     /**
      * Removes the given rows from the data set.
+     * The rows should be sorted
      */
     public final void removeRows(int[] selectedRows) {
 

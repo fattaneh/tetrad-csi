@@ -62,6 +62,12 @@ public class IndTestRBIT implements IndependenceTest {
 
     private boolean verbose = false;
 
+	private double posterior;
+
+	private boolean threshold = true;
+
+	private double cutoff = 0.5;
+	
     public IndTestRBIT(DataSet data) {
         this.data = data;
         this.N = data.getNumRows();
@@ -73,6 +79,7 @@ public class IndTestRBIT implements IndependenceTest {
     }
 
     public boolean isIndependent(Node x, Node y, List<Node> z) {
+//        System.out.print(x + "_||_ " + y + "|" +  z);
 
         int[] n0 = new int[z.size()+2];
         int[] n1 = new int[z.size()];
@@ -115,12 +122,30 @@ public class IndTestRBIT implements IndependenceTest {
         pValue = Math.pow(exp(llik - log(N)/2.0) + 1, -1);
         score = alpha - pValue;
 
-        return pValue > alpha;
+        double p = pValue; 
+//        System.out.println(" = " + pValue);
 
+        this.posterior = p;
+
+        boolean ind ;
+        if (this.threshold){
+			ind = (p >= cutoff);
+        }
+        else{
+        	ind = RandomUtil.getInstance().nextDouble() < p;
+        }
+
+        if (ind) {
+            return true;
+        } else {
+            return false;
+        }
     }
+
 
     @Override
     public boolean isIndependent(Node x, Node y, Node... z) {
+        System.out.print(x + "_||_ " + y + "|" +  z);
         List<Node> zList = Arrays.asList(z);
         return isIndependent(x, y, zList);
     }
@@ -170,7 +195,7 @@ public class IndTestRBIT implements IndependenceTest {
 
     @Override
     public double getPValue() {
-        return pValue;
+        return posterior;
     }
 
     @Override
@@ -222,5 +247,14 @@ public class IndTestRBIT implements IndependenceTest {
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
     }
+    /**
+	 * @param noRandomizedGeneratingConstraints
+	 */
+	public void setThreshold(boolean noRandomizedGeneratingConstraints) {
+		this.threshold = noRandomizedGeneratingConstraints;
+	}
 
+	public void setCutoff(double cutoff) {
+		this.cutoff = cutoff;
+	}
 }

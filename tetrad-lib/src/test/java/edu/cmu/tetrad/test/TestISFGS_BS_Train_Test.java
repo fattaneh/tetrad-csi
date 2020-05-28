@@ -32,14 +32,13 @@ import edu.cmu.tetrad.util.DelimiterUtils;
 public class TestISFGS_BS_Train_Test {
 	public static void main(String[] args) {
 
-		String pathToFolder = "/Users/fattanehjabbari/PPT_project/Data/";
+		String pathToFolder = "/Users/fattanehjabbari/PPT_project/Data-Sept3/ProcessesData/";
 		String dataSubName = "Medications_AllTypes";
-		String dataName = "ppt_data_processed_"+dataSubName+ "_aug28";
+		String dataName = "ppt_data_processed_"+dataSubName+ "_disc_Sept3";
 		String pathToTrainData = pathToFolder + dataName + "_train.csv";
 		String pathToTestData = pathToFolder + dataName + "_test.csv";
-
 		String target = "Composite_Outcome";
-
+		
 		// Read in the data
 		DataSet trainData = readData(pathToTrainData);
 		DataSet testData = readData(pathToTestData);	

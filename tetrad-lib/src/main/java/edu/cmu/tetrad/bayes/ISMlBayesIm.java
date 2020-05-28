@@ -550,6 +550,7 @@ public final class ISMlBayesIm implements BayesIm {
 	 * @param nodeIndex the node for the table that this row belongs to.
 	 * @param rowIndex  the index of the row.
 	 */
+	
 	public void randomizeRow(int nodeIndex, int rowIndex) {
 		final int size = getNumColumns(nodeIndex);
 		probs[nodeIndex][rowIndex] = getRandomWeights3(size);
@@ -599,63 +600,70 @@ public final class ISMlBayesIm implements BayesIm {
 	 *
 	 * @param nodeIndex the node for the table to be randomized.
 	 */
+	
 	public void randomizeTable(int nodeIndex) {
-
-		for (int rowIndex = 0; rowIndex < getNumRows(nodeIndex); rowIndex++) {
-			double[] maxr = null;
-			double max = Double.NEGATIVE_INFINITY;
-
-			for (int i = 0; i < 100; i++) {
-				double[] r1 = getRandomWeights(getNumColumns(nodeIndex));
-
-				double d = 0;
-
-				for (int j = 0; j < rowIndex; j++) {
-					double[] r2 = probs[nodeIndex][rowIndex];
-
-					for (int k = 0; k < getNumColumns(nodeIndex); k++) {
-						d += (r1[k] - r2[k]) * (r1[k] - r2[k]);
-					}
-				}
-
-				if (d > max) {
-					max = d;
-					maxr = r1;
-				}
-			}
-
-			probs[nodeIndex][rowIndex] = maxr;
-		}
-
-		for (int t = 0; t < 5; t++) {
-			for (int rowIndex = 0; rowIndex < getNumRows(nodeIndex); rowIndex++) {
-				double[] maxr = null;
-				double max = Double.NEGATIVE_INFINITY;
-
-				for (int i = 0; i < 100; i++) {
-					double[] r1 = getRandomWeights(getNumColumns(nodeIndex));
-
-					double d = 0;
-
-					for (int j = 0; j < getNumRows(nodeIndex); j++) {
-						if (rowIndex == j) continue;
-						double[] r2 = probs[nodeIndex][rowIndex];
-
-						for (int k = 0; k < getNumColumns(nodeIndex); k++) {
-							d += (r1[k] - r2[k]) * (r1[k] - r2[k]);
-						}
-					}
-
-					if (d > max) {
-						max = d;
-						maxr = r1;
-					}
-				}
-
-				probs[nodeIndex][rowIndex] = maxr;
-			}
-		}
-	}
+        for (int rowIndex = 0; rowIndex < getNumRows(nodeIndex); rowIndex++) {
+            randomizeRow(nodeIndex, rowIndex);
+        }
+//        randomizeTable4(nodeIndex);
+    }
+//	public void randomizeTable(int nodeIndex) {
+//
+//		for (int rowIndex = 0; rowIndex < getNumRows(nodeIndex); rowIndex++) {
+//			double[] maxr = null;
+//			double max = Double.NEGATIVE_INFINITY;
+//
+//			for (int i = 0; i < 100; i++) {
+//				double[] r1 = getRandomWeights(getNumColumns(nodeIndex));
+//
+//				double d = 0;
+//
+//				for (int j = 0; j < rowIndex; j++) {
+//					double[] r2 = probs[nodeIndex][rowIndex];
+//
+//					for (int k = 0; k < getNumColumns(nodeIndex); k++) {
+//						d += (r1[k] - r2[k]) * (r1[k] - r2[k]);
+//					}
+//				}
+//
+//				if (d > max) {
+//					max = d;
+//					maxr = r1;
+//				}
+//			}
+//
+//			probs[nodeIndex][rowIndex] = maxr;
+//		}
+//
+//		for (int t = 0; t < 5; t++) {
+//			for (int rowIndex = 0; rowIndex < getNumRows(nodeIndex); rowIndex++) {
+//				double[] maxr = null;
+//				double max = Double.NEGATIVE_INFINITY;
+//
+//				for (int i = 0; i < 100; i++) {
+//					double[] r1 = getRandomWeights(getNumColumns(nodeIndex));
+//
+//					double d = 0;
+//
+//					for (int j = 0; j < getNumRows(nodeIndex); j++) {
+//						if (rowIndex == j) continue;
+//						double[] r2 = probs[nodeIndex][rowIndex];
+//
+//						for (int k = 0; k < getNumColumns(nodeIndex); k++) {
+//							d += (r1[k] - r2[k]) * (r1[k] - r2[k]);
+//						}
+//					}
+//
+//					if (d > max) {
+//						max = d;
+//						maxr = r1;
+//					}
+//				}
+//
+//				probs[nodeIndex][rowIndex] = maxr;
+//			}
+//		}
+//	}
 
 	/**
 	 * Randomizes every row in the table for the given node index.
@@ -1382,7 +1390,7 @@ public final class ISMlBayesIm implements BayesIm {
 
 		// Sort parent array.
 		Arrays.sort(parentArray);
-
+		
 		parents[nodeIndex] = parentArray;
 
 		// Setup dimensions array for parents.
@@ -1408,7 +1416,7 @@ public final class ISMlBayesIm implements BayesIm {
 
 			numRows *= dim;
 		}
-
+		
 		int numCols = getBayesPm().getNumCategories(node);
 
 		parentDims[nodeIndex] = dims;

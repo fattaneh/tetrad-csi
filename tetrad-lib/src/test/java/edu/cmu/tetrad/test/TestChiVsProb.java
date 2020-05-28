@@ -22,10 +22,9 @@ import edu.cmu.tetrad.graph.Node;
 import edu.cmu.tetrad.graph.NodeType;
 import edu.cmu.tetrad.search.BDeuScore;
 import edu.cmu.tetrad.search.Fci;
-import edu.cmu.tetrad.search.GFci;
 import edu.cmu.tetrad.search.IndTestChiSquare;
 import edu.cmu.tetrad.search.IndTestDSep;
-import edu.cmu.tetrad.search.IndTestProbabilistic;
+import edu.cmu.tetrad.search.IndTestProbabilisticBic;
 import edu.cmu.tetrad.search.IndependenceTest;
 import edu.cmu.tetrad.search.SearchGraphUtils;
 import edu.cmu.tetrad.util.RandomUtil;
@@ -69,14 +68,14 @@ public class TestChiVsProb {
 		//RandomUtil.getInstance().setSeed(1454147770L);
 		int[] numVarss = new int[]{20};
 		double[] edgesPerNodes = new double[]{2.0, 3.0, 4.0, 5.0};
-		int numCases = 1000;
+		int numCases = 2000;
 		int minCat = 2;
-		int maxCat = 3;
+		int maxCat = 4;
 		int numSim = 1;
 		boolean threshold = true;
 		double latent = 0.1;	
 		double[] alphas = new double[]{0.05};//{0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1};
-		double[] thresholds = new double[]{0.9};//, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.91, 0.92, 0.93, 0.94, 0.95, 0.96, 0.97, 0.98, 0.99};
+		double[] thresholds = new double[]{0.5};//, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.91, 0.92, 0.93, 0.94, 0.95, 0.96, 0.97, 0.98, 0.99};
 
 		for (int numVars: numVarss){
 			for (double edgesPerNode : edgesPerNodes){
@@ -142,7 +141,7 @@ public class TestChiVsProb {
 					Fci fci = new Fci(dsep);
 					Graph truePag = fci.search();
 					truePag = GraphUtils.replaceNodes(truePag, trueBN.getNodes());
-					//System.out.println("truePag: " +truePag);
+
 
 					BDeuScore scoreP = new BDeuScore(trainData);
 					scoreP.setStructurePrior(0.001);
@@ -159,6 +158,7 @@ public class TestChiVsProb {
 						IndTestChiSquare indTestChi2 = new IndTestChiSquare(trainData, alpha);
 //						GFci gfciChi2 = new GFci(indTestChi2, scoreP);
 						Fci gfciChi2 = new Fci(indTestChi2);
+						gfciChi2.setDepth(4);
 						Graph graphChi2 = gfciChi2.search();
 						//System.out.println("graphChi2: " +graphChi2);
 
@@ -211,10 +211,11 @@ public class TestChiVsProb {
 //						System.out.println("cutoff: " + cutoff);
 
 						// learn the population model using Bsc
-						IndTestProbabilistic indTestBsc = new IndTestProbabilistic(trainData);
+						IndTestProbabilisticBic indTestBsc = new IndTestProbabilisticBic(trainData);
 						indTestBsc.setThreshold(threshold);
 						indTestBsc.setCutoff(cutoff);
 						Fci gfciBsc = new Fci(indTestBsc);
+						gfciBsc.setDepth(4);
 //						GFci gfciBsc = new GFci(indTestBsc, scoreP);
 						Graph graphBsc = gfciBsc.search();
 

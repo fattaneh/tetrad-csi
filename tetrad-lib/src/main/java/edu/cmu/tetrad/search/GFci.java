@@ -76,6 +76,9 @@ public final class GFci implements GraphSearch {
 
     // The score.
     private Score score;
+    
+    public Graph FgesGraph;
+
 
     private SepsetProducer sepsets;
     private long elapsedTime;
@@ -109,7 +112,8 @@ public final class GFci implements GraphSearch {
         fges.setOut(out);
         graph = fges.search();
         Graph fgesGraph = new EdgeListGraphSingleConnections(graph);
-
+        this.FgesGraph = new EdgeListGraph(fgesGraph);
+//        System.out.println("fgesGraph: " + fgesGraph);
         sepsets = new SepsetsGreedy(fgesGraph, independenceTest, null, maxDegree);
 
         for (Node b : nodes) {

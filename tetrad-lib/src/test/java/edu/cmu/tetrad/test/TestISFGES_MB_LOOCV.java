@@ -69,17 +69,28 @@ public class TestISFGES_MB_LOOCV {
 //		String dataName = "port_all";
 //		String pathToData = pathToFolder + "PORT/" + dataName + ".csv";
 //		String target = "217.DIREOUT";
-	
-//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/Shyam-data/";
-//		String dataName = "heart_death_di";
-//		String pathToData = pathToFolder + "Heart Failure/" + dataName + ".csv";
-//		String target = "death";
-		
-		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/TDI_DEG/";
-		String dataName = "DEGmatrix.UPMCcell4greg.TDIDEGfeats";
-		String pathToData = pathToFolder + "/" + dataName + ".csv";
-		String target = "PD1response";
 
+
+//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/UCI/";
+//		String dataName = "breast-cancer.data_imputed";
+//		String pathToData = pathToFolder + dataName + ".csv";
+//		String target = "y";
+		
+//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/UCI/";
+//		String dataName = "SPECT.train";
+//		String pathToData = pathToFolder + dataName + ".csv";
+//		String target = "y";
+		
+//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/TDI_DEG/";
+//		String dataName = "DEGmatrix.UPMCcell4greg.TDIDEGfeats";
+//		String pathToData = pathToFolder + "/" + dataName + ".csv";
+//		String target = "PD1response";
+
+		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/lung_cancer/data/";
+		String dataName = "LCMR_Processed4_NA_surv";
+		String pathToData = pathToFolder + dataName + ".csv";
+		String target = "Survive1";
+		
 		// Read in the data
 		DataSet trainDataOrig = readData(pathToData);
 
@@ -88,33 +99,63 @@ public class TestISFGES_MB_LOOCV {
 		double structurePrior = 1.0;
 		Graph graphP = BNlearn_pop(trainDataOrig, samplePrior, structurePrior);
 		System.out.println("Pop graph:" + graphP.getEdges());
+		PrintStream logFile;
+		try {
+			File dir = new File( pathToFolder + "/outputs/MB/" + dataName + "/PESS" + samplePrior);
+			dir.mkdirs();
+			String outputFileName = dataName + "PESS" + samplePrior +"_log.txt";
+			File fileAUC = new File(dir, outputFileName);
+			logFile = new PrintStream(new FileOutputStream(fileAUC));
+
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		logFile.println(trainDataOrig.getNumRows() +", " + trainDataOrig.getNumColumns());
+		logFile.println("Pop graph:" + graphP.getEdges());
 
 		double T_plus = 0.9;
 		double T_minus = 0.1;
+		System.out.println("PESS = " + samplePrior);
+		logFile.println("PESS = " + samplePrior);
+
 
 		for (int p = 1; p <= 10; p++){
 
 			double k_add =  p/10.0; 
 
-			System.out.println("kappa = " + k_add);
-
 			double[] probs_is = new double[trainDataOrig.getNumRows()];
 			double[] probs_p = new double[trainDataOrig.getNumRows()];
 			int[] truth = new int[trainDataOrig.getNumRows()];
+			double[] llr = new double[trainDataOrig.getNumRows()];
+			double average_llr = 0.0;
+			
 			Map <KeyMB, Double> stats= new HashMap<KeyMB, Double>();
 			//			PrintStream out;
-			PrintStream outForAUC;
+			PrintStream outForAUC, out;
 			try {
-				File dir = new File( pathToFolder + "/outputs/MB/" + dataName);
+				File dir = new File( pathToFolder + "/outputs/MB-2/" + dataName + "/PESS" + samplePrior);
 				dir.mkdirs();
-				String outputFileName = dataName + "-AUROC-Kappa"+ k_add +".csv";
+				String outputFileName = dataName + "-AUROC-Kappa"+ k_add + "PESS" + samplePrior +".csv";
 				File fileAUC = new File(dir, outputFileName);
 				outForAUC = new PrintStream(new FileOutputStream(fileAUC));
+				
+				outputFileName = dataName + "FeatureDist-Kappa"+ k_add + "PESS" + samplePrior +".csv";
+				File filePredisctors = new File(dir, outputFileName);
+				out = new PrintStream(new FileOutputStream(filePredisctors));
+
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
 
-
+			System.out.println("kappa = " + k_add);
+			logFile.println("kappa = " + k_add);
+			
+			Map <String, Double> fdist= new HashMap<String, Double>();
+			for (int i = 0; i < trainDataOrig.getNumColumns() - 1; i++){
+				fdist.put(trainDataOrig.getVariable(i).getName(), 0.0);
+			}
+			
+			out.println("features, fraction of occurance in cases");
 			outForAUC.println("y, population-FGES, instance-specific-FGES");//, DEGs");
 
 			//LOOCV loop
@@ -130,13 +171,18 @@ public class TestISFGES_MB_LOOCV {
 				// compute probability distribution of the target variable
 				int targetIndex = trainData.getColumn(trainData.getVariable(target)); //imP.getNodeIndex(imP.getNode(target));
 				truth[i] = test.getInt(0, targetIndex);
-
+				
 				//get the prob from IS model
 				DagInPatternIterator iterator = new DagInPatternIterator(graphI);
 				Graph dagI = iterator.next();
 				dagI = GraphUtils.replaceNodes(dagI, trainData.getVariables());
 				Graph mb_i = GraphUtils.markovBlanketDag(dagI.getNode(target), dagI);
 				probs_is[i]= estimation(trainData, test, (Dag) mb_i, target);
+				List<Node> mb_nodes = mb_i.getNodes();
+				mb_nodes.remove(mb_i.getNode(target));
+				for (Node no: mb_nodes){
+					fdist.put(no.getName(), fdist.get(no.getName()) + 1.0);
+				}
 
 				//get the prob from population model
 				DagInPatternIterator iteratorP = new DagInPatternIterator(graphP);
@@ -145,6 +191,26 @@ public class TestISFGES_MB_LOOCV {
 				Graph mb_p = GraphUtils.markovBlanketDag(dagP.getNode(target), dagP);
 				probs_p[i] = estimation(trainData, test, (Dag) mb_p, target);
 
+				ISBDeuScore scoreI = new ISBDeuScore(trainData, test);
+				scoreI.setSamplePrior(samplePrior);
+				scoreI.setKAddition(k_add);
+				scoreI.setKDeletion(k_add);
+				scoreI.setKReorientation(k_add);
+				ISFges iges = new ISFges(scoreI);				
+				iges.setPopulationGraph(graphP);
+//				iges.setInitialGraph(graphP);
+				List <Node> mb_nodes_all = mb_i.getNodes();
+				mb_nodes_all.addAll(mb_p.getNodes());
+				Graph mb_i2 = new EdgeListGraph(mb_nodes_all);
+				Graph mb_p2 = new EdgeListGraph(mb_nodes_all);
+				for (Edge e : mb_i.getEdges()){
+					mb_i2.addEdge(e);
+				}
+				for (Edge e : mb_p.getEdges()){
+					mb_p2.addEdge(e);
+				}
+				llr[i] = iges.scoreDag(mb_i2, graphI) - iges.scoreDag(mb_p2, graphP);
+				average_llr += llr[i];
 				//graph comparison
 				GraphUtils.GraphComparison cmp = SearchGraphUtils.getGraphComparison(mb_i, mb_p);
 				
@@ -170,13 +236,32 @@ public class TestISFGES_MB_LOOCV {
 			System.out.println( "AUROC: "+ auroc);
 			System.out.println( "FCR_P: "+ fcr_p);
 			System.out.println( "FCR: "+ fcr);
+			logFile.println( "AUROC_P: "+ auroc_p);
+			logFile.println( "AUROC: "+ auroc);
+			logFile.println( "FCR_P: "+ fcr_p);
+			logFile.println( "FCR: "+ fcr);
 
 			for (KeyMB k : stats.keySet()){
 				System.out.println(k.print(k) + ":" + (stats.get(k)/trainDataOrig.getNumRows())*100);
+				logFile.println(k.print(k) + ":" + (stats.get(k)/trainDataOrig.getNumRows())*100);
+
 			}
+			System.out.println("average_llr: " + (average_llr/ trainDataOrig.getNumRows()));
+			logFile.println("average_llr: " + (average_llr/ trainDataOrig.getNumRows()));
 			System.out.println("-----------------");
+			logFile.println("-----------------");
+			
+			
+			Map<String, Double> sortedfdist = sortByValue(fdist, false);
+
+			for (String k : sortedfdist.keySet()){
+				out.println(k + ", " + (fdist.get(k)/trainDataOrig.getNumRows()));
+				
+			}
 			outForAUC.close();
+			out.close();
 		}
+		logFile.close();
 	}
 
 	private static Graph learnBNIS(DataSet trainData, DataSet test, double kappa, Graph graphP, double samplePrior){

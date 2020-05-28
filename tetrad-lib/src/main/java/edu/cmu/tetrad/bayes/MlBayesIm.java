@@ -1247,7 +1247,7 @@ public final class MlBayesIm implements BayesIm {
 //        pool.invoke(task);
 
 
-        // Construct the sample.
+    	 // Construct the sample.
         for (int i = 0; i < sampleSize; i++) {
             for (int t : tiers) {
                 int[] parentValues = new int[parents[t].length];

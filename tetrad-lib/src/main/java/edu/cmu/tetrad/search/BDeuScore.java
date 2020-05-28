@@ -25,6 +25,7 @@ import edu.cmu.tetrad.data.*;
 import edu.cmu.tetrad.graph.Node;
 import org.apache.commons.math3.special.Gamma;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -85,7 +86,7 @@ public class BDeuScore implements LocalDiscreteScore, IBDeuScore, Score {
     }
 
     @Override
-    public double localScore(int node, int parents[]) {
+    public double localScore(int node, int[] parents) {
 
         // Number of categories for node.
         int c = numCategories[node];
@@ -163,6 +164,84 @@ public class BDeuScore implements LocalDiscreteScore, IBDeuScore, Score {
 
         return score;
     }
+    public double localScore1(int node, int[] parents) {
+
+        // Number of categories for node.
+        int c = numCategories[node];
+
+        // Numbers of categories of parents.
+        int[] dims = new int[parents.length];
+
+        for (int p = 0; p < parents.length; p++) {
+            dims[p] = numCategories[parents[p]];
+        }
+
+        // Number of parent states.
+        int r = 1;
+
+        for (int p = 0; p < parents.length; p++) {
+            r *= dims[p];
+        }
+
+        // Conditional cell coefs of data for node given parents(node).
+        int n_jk[][] = new int[r][c];
+        int n_j[] = new int[r];
+
+        int[] parentValues = new int[parents.length];
+
+        int[][] myParents = new int[parents.length][];
+        for (int i = 0; i < parents.length; i++) {
+            myParents[i] = data[parents[i]];
+        }
+
+        int[] myChild = data[node];
+
+
+        ROW:
+        for (int i = 0; i < sampleSize; i++) {
+            for (int p = 0; p < parents.length; p++) {
+                if (myParents[p][i] == -99) continue ROW;
+                parentValues[p] = myParents[p][i];
+            }
+
+            int childValue = myChild[i];
+
+            if (childValue == -99) {
+                continue ROW;
+//                throw new IllegalStateException("Please remove or impute missing " +
+//                        "values (record " + i + " column " + i + ")");
+            }
+
+            int rowIndex = getRowIndex(dims, parentValues);
+
+            n_jk[rowIndex][childValue]++;
+            n_j[rowIndex]++;
+        }
+
+        //Finally, compute the score
+        double score = 0.0;
+
+//        score += getPriorForStructure(parents.length);
+
+        final double cellPrior = getSamplePrior() / (c * r);
+        final double rowPrior = getSamplePrior() / r;
+		// K2 prior
+//		double rowPrior = getSamplePrior() * c;
+//		double cellPrior = getSamplePrior();
+        
+		for (int j = 0; j < r; j++) {
+            score -= Gamma.logGamma(rowPrior + n_j[j]);
+
+            for (int k = 0; k < c; k++) {
+                score += Gamma.logGamma(cellPrior + n_jk[j][k]);
+            }
+        }
+
+        score += r * Gamma.logGamma(rowPrior);
+        score -= c * r * Gamma.logGamma(cellPrior);
+
+        return score;
+    }
 
     private double getPriorForStructure(int numParents) {
         double e = getStructurePrior();
@@ -172,6 +251,14 @@ public class BDeuScore implements LocalDiscreteScore, IBDeuScore, Score {
 
     @Override
     public double localScoreDiff(int x, int y, int[] z) {
+//    	System.out.println("y: " + y);
+//		System.out.println("x: " + x);
+//		System.out.println("PA: " + Arrays.toString(z));
+//		double S1 = localScore(y, append(z, x));
+//		double S2 = localScore(y, z);
+//		System.out.println("S1: " + S1);
+//		System.out.println("S2: " + S2);
+//		System.out.println("-------------------");
         return localScore(y, append(z, x)) - localScore(y, z);
     }
 
@@ -277,6 +364,8 @@ public class BDeuScore implements LocalDiscreteScore, IBDeuScore, Score {
     public boolean determines(List<Node> z, Node y) {
         return false;
     }
+
+
 }
 
 

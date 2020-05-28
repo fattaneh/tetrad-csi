@@ -21,29 +21,28 @@ import edu.cmu.tetrad.data.Knowledge2;
 import edu.cmu.tetrad.graph.*;
 import edu.cmu.tetrad.search.*;
 import edu.cmu.tetrad.test.Key;
-import edu.pitt.dbmi.data.reader.tabular.TabularDataReader;
 import edu.pitt.dbmi.data.reader.tabular.VerticalDiscreteTabularDatasetFileReader;
 import edu.pitt.dbmi.data.reader.tabular.VerticalDiscreteTabularDatasetReader;
 import edu.cmu.tetrad.util.DataConvertUtils;
 import edu.cmu.tetrad.util.DelimiterUtils;
 
 public class TestISFGS_Train_Test {
+	
 	public static void main(String[] args) {
 		
-		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/Shyam-data/";
-		String dataName = "port";
-		String pathToTrainData = pathToFolder + "PORT/" + dataName + "_train.csv";
-		String pathToTestData = pathToFolder + "PORT/" + dataName + "_test.csv";
-
-		String target = "217.DIREOUT";
-		
-//		String pathToFolder = "/Users/fattanehjabbari/PPT_project/Data/";
-//		String dataSubName = "RehabTherapies_AllTypes";
-//		String dataName = "ppt_data_processed_"+dataSubName+ "_aug28";
-//		String pathToTrainData = pathToFolder + dataName + "_train.csv";
-//		String pathToTestData = pathToFolder + dataName + "_test.csv";
+//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/Shyam-data/";
+//		String dataName = "port";
+//		String pathToTrainData = pathToFolder + "PORT/" + dataName + "_train.csv";
+//		String pathToTestData = pathToFolder + "PORT/" + dataName + "_test.csv";
 //
-//		String target = "Composite_Outcome";
+//		String target = "217.DIREOUT";
+//		
+		String pathToFolder = "/Users/fattanehjabbari/PPT_project/Data-Oct21/ProcessesData/";
+		String dataSubName = "Medications_AllTypes";
+		String dataName = "processed_PPT_Dataset2_"+dataSubName+ "_3Month_DeID_disc2_Oct21";
+		String pathToTrainData = pathToFolder + dataName + "_train.csv";
+		String pathToTestData = pathToFolder + dataName + "_test.csv";
+		String target = "Composite_Outcome";
 		
 		// Read in the data
 		DataSet trainData = readData(pathToTrainData);
@@ -62,7 +61,7 @@ public class TestISFGS_Train_Test {
 		double T_minus = 0.2;
 		
 		// loop over kappa
-		for (int p = 3; p <= 10; p++){
+		for (int p = 5; p <= 5; p++){
 
 			double k_add =  p/10.0; //Math.pow(10, -1.0*p);
 	
@@ -73,19 +72,33 @@ public class TestISFGS_Train_Test {
 			int[] truth = new int[testData.getNumRows()];
 			Map <Key, Double> stats= new HashMap<Key, Double>();
 //			PrintStream out;
-			PrintStream outForAUC;
+			PrintStream out, outForAUC, outForPredisctors;
 			try {
 				File dir = new File( pathToFolder + "/outputs/" + dataName);
 				dir.mkdirs();
-				String outputFileName = dataName + "-AUROC-Kappa"+ k_add +".csv";
+				
+				String outputFileName = dataName + "-FeatureDist-Kappa"+ k_add +".csv";
+				File file = new File(dir, outputFileName);
+				out = new PrintStream(new FileOutputStream(file));
+				
+				outputFileName = dataName + "-AUROC-Kappa"+ k_add +".csv";
 				File fileAUC = new File(dir, outputFileName);
 				outForAUC = new PrintStream(new FileOutputStream(fileAUC));
+				
+				outputFileName = dataName + "_Predictors_Kappa"+ k_add +".csv";
+				File filePredisctors = new File(dir, outputFileName);
+				outForPredisctors = new PrintStream(new FileOutputStream(filePredisctors));
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
 
-
 			outForAUC.println("y, population-FGES, instance-specific-FGES");//, DEGs");
+
+			Map <String, Double> fdist= new HashMap<String, Double>();
+			for (int i = 0; i < trainData.getNumColumns()-1; i++){
+				fdist.put(trainData.getVariable(i).getName(), 0.0);
+			}
+			out.println("features, fraction of occurance in cases");
 
 			// loop over test cases
 			for (int i = 0; i < testData.getNumRows(); i++){
@@ -101,7 +114,12 @@ public class TestISFGS_Train_Test {
 				
 				//get the prob from IS model
 				probs_is[i]= estimation(trainData, test, graphI, target);
-
+				List<Node> parents_i = graphI.getParents(graphI.getNode(target));
+				for (Node no: parents_i){
+					outForPredisctors.print(no.getName() + ",");
+					fdist.put(no.getName(), fdist.get(no.getName())+1.0);
+				}
+				outForPredisctors.println();
 				//get the prob from population model
 				double prob_p = estimation(trainData, test, graphP, target);
 				probs_p[i] = prob_p; 
@@ -156,8 +174,17 @@ public class TestISFGS_Train_Test {
 			for (Key k : stats.keySet()){
 				System.out.println(k.print(k) + ":" + (stats.get(k)/testData.getNumRows())*100);
 			}
+			Map<String, Double> sortedfdist = sortByValue(fdist, false);
+
+			for (String k : sortedfdist.keySet()){
+				out.println(k + ", " + (fdist.get(k)/testData.getNumRows()));
+				
+			}
 			System.out.println("-----------------");
 			outForAUC.close();
+			outForPredisctors.close();
+			out.close();
+
 		}
 	}
 	

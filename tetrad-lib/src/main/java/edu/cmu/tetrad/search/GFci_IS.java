@@ -112,17 +112,18 @@ public final class GFci_IS implements GraphSearch {
 
         ISFges fges = new ISFges(score);
         fges.setPopulationGraph(this.populationGraph);
-//        fges.setInitialGraph(this.populationGraph);
+        fges.setInitialGraph(this.populationGraph);
 
-        fges.setKnowledge(getKnowledge());
-        fges.setVerbose(verbose);
-        fges.setFaithfulnessAssumed(faithfulnessAssumed);
-        fges.setMaxDegree(maxDegree);
-        fges.setOut(out);
+//        fges.setKnowledge(getKnowledge());
+//        fges.setVerbose(verbose);
+//        fges.setFaithfulnessAssumed(faithfulnessAssumed);
+//        fges.setMaxDegree(maxDegree);
+//        fges.setOut(out);
         graph = fges.search();
         Graph fgesGraph = new EdgeListGraphSingleConnections(graph);
-
+//        System.out.println("FGES done!!!!");
         sepsets = new SepsetsGreedy(fgesGraph, independenceTest, null, maxDegree);
+//        System.out.println("SepsetsGreedy done!!!!");
 
         for (Node b : nodes) {
             if (Thread.currentThread().isInterrupted()) {
@@ -163,6 +164,7 @@ public final class GFci_IS implements GraphSearch {
         fciOrient.setCompleteRuleSetUsed(completeRuleSetUsed);
         fciOrient.setMaxPathLength(maxPathLength);
         fciOrient.doFinalOrientation(graph);
+//        System.out.println("MEEKS' RULES done!!!!");
 
         GraphUtils.replaceNodes(graph, independenceTest.getVariables());
 

@@ -47,7 +47,7 @@ public interface ISScore {
     boolean determines(List<Node> z, Node y);
     
     // same as localSCire but this one doesn't use structure prior
-	double localScore1(int yIndex, int[] parentIndices, int[] populationParentIndices);
+	double localScore1(int node, int[] parents_is, int[] parents_pop, int[] children_pop);
 	
 	double getStructurePrior();
 

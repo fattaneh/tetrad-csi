@@ -183,7 +183,7 @@ public final class Fges implements GraphSearch, GraphScorer {
      * the machine.
      */
     public Fges(Score score) {
-        this(score, Runtime.getRuntime().availableProcessors() * 10);
+        this(score, Runtime.getRuntime().availableProcessors());
     }
 
     /**
@@ -197,7 +197,7 @@ public final class Fges implements GraphSearch, GraphScorer {
         this.maxThreads = parallelism;
         this.pool = new ForkJoinPool(parallelism);
         this.graph = new EdgeListGraphSingleConnections(getVariables());
-        numNodesPerTask = Math.max(100, getVariables().size() / maxThreads);
+        numNodesPerTask = maxThreads * 2; //Math.max(100, getVariables().size() / maxThreads);
     }
 
     //==========================PUBLIC METHODS==========================//
@@ -1953,11 +1953,13 @@ public final class Fges implements GraphSearch, GraphScorer {
     //===========================SCORING METHODS===================//
 
     private double scoreDag(Graph dag, boolean recordScores) {
-        if (score instanceof GraphScore) return 0.0;
+
+//        if (score instanceof GraphScore) return 0.0;
 
         Score score2 = score;
 
         if (score instanceof SemBicScore) {
+
             DataSet dataSet = ((SemBicScore) score).getDataSet();
 
             if (dataSet != null) {
@@ -1979,17 +1981,19 @@ public final class Fges implements GraphSearch, GraphScorer {
 
         for (Node node : getVariables()) {
 
-            if (score2 instanceof SemBicScore) {
+            if (score2 instanceof BDeuScore) {
                 List<Node> x = dag.getParents(node);
 
                 int[] parentIndices = new int[x.size()];
 
                 int count = 0;
+//    			System.out.println(node);
                 for (Node parent : x) {
                     parentIndices[count++] = hashIndices.get(parent);
                 }
-
-                final double bic = score2.localScore(hashIndices.get(node), parentIndices);
+//                final double bic = (score2.localScore1(hashIndices.get(node), parentIndices);
+                final double bic =  score.localScore(hashIndices.get(x), parentIndices);
+//    			System.out.println( "node " + node +", pa (" + node + ") = " + Arrays.toString(parentIndices) +" =" + bic);
 
                 if (recordScores) {
                     node.addAttribute("BIC", bic);

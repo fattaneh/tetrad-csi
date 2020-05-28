@@ -73,7 +73,7 @@ public class ISBDeuScore implements ISScore {
 			VerticalIntDataBox box = (VerticalIntDataBox) dataBox;
 
 			data = box.getVariableVectors();
-			this.sampleSize = dataSet.getNumRows();
+			this.sampleSize = box.numRows();
 		} else {
 			data = new int[dataSet.getNumColumns()][];
 			this.variables = dataSet.getVariables();
@@ -255,9 +255,12 @@ public class ISBDeuScore implements ISScore {
 			}
 		}
 
-
+//		System.out.println("scoreIS: " + scoreIS);
 		scoreIS += getPriorForStructure(node, parents_is, parents_pop, children_pop);
-		scorePop += getPriorForStructure(parents_pop.length);
+//		System.out.println("scoreIS prior: " + getPriorForStructure(node, parents_is, parents_pop, children_pop));
+//		System.out.println("scorePop: " + scorePop);
+
+//		scorePop += getPriorForStructure(parents_pop.length);
 		score = scorePop + scoreIS;
 		return score;
 	}
@@ -392,7 +395,7 @@ public class ISBDeuScore implements ISScore {
 //		System.out.println("x: " + x);
 //		System.out.println("PA_is: " + Arrays.toString(z));
 //		System.out.println("PA_pop: " + Arrays.toString(z_pop));
-//
+
 //		System.out.println("S1: " + S1);
 //		System.out.println("S2: " + S2);
 //		System.out.println("diff: " + diff);
@@ -645,52 +648,28 @@ public class ISBDeuScore implements ISScore {
 //				return score;
 //	}
 	// This function is used to score a node in a dag without using structure prior
-		public double localScore1(int node, int[] parents, int[] parents_pop) {
-
+		public double localScore1(int node, int[] parents_is, int[] parents_pop, int[] children_pop) {
+			
 			// Number of categories for node.
 			int K = numCategories[node];
 
-			// Numbers of categories of parents in population-wide model.
-			int[] dims = new int[parents_pop.length];
+			// Numbers of categories of parents in POP and IS models.
+			int[] dims_p = getDimentions(parents_pop);
 
-			for (int p = 0; p < parents_pop.length; p++) {
-				dims[p] = numCategories[parents_pop[p]];
-			}
+			// Number of parent states  in POP, IS, and both.
+			int r_p = computeAllParentStates(parents_pop, dims_p);
 
-			List<Integer> notSameParents = new ArrayList<Integer>();
-			List<Integer> sameParents = new ArrayList<Integer>();
-			List<Integer> copyParents_pop = IntStream.of(parents_pop).boxed().collect(Collectors.toList());
-
-			for (int k = 0; k < parents.length; k++) {
-				if (!copyParents_pop.contains(parents[k])){
-					notSameParents.add(parents[k]);
-				}
-				else{
-					sameParents.add(parents[k]);
-				}
-			}
-
-			// Number of parent states.
-			int r = 1;
-			int rr = 1;
-			for (int p = 0; p < parents_pop.length; p++) {
-				r *= dims[p];
-				if (!sameParents.contains(parents_pop[p])){
-					rr *= dims[p];
-				}
-			}
+			// Conditional cell coefs of data for node given population parents(node).
+			int np_jk[][] = new int[r_p][K];
+			int np_j[] = new int[r_p];
 
 			// Conditional cell coefs of data for node given context specific parents(node).
 			int ni_jk[] = new int[K];
 			int ni_j = 0;
 
-			// Conditional cell coefs of data for node given parents(node).
-			int np_jk[][] = new int[r][K];
-			int np_j[] = new int[r];
-
-			int[] parentValuesTest = new int[parents.length];
-			for (int i = 0; i < parents.length ; i++){
-				parentValuesTest[i] =  test[parents[i]][0];
+			int[] parentValuesTest = new int[parents_is.length];
+			for (int i = 0; i < parents_is.length ; i++){
+				parentValuesTest[i] =  test[parents_is[i]][0];
 			}
 
 
@@ -698,10 +677,10 @@ public class ISBDeuScore implements ISScore {
 
 			ROW:
 				for (int i = 0; i < sampleSize; i++) {
-					int[] parentValues = new int[parents.length];
-					for (int p = 0; p < parents.length; p++) {
-						if (data[parents[p]][i] == -99) continue ROW;
-						parentValues[p] = data[parents[p]][i];
+					int[] parentValues = new int[parents_is.length];
+					for (int p = 0; p < parents_is.length; p++) {
+						if (data[parents_is[p]][i] == -99) continue ROW;
+						parentValues[p] = data[parents_is[p]][i];
 					}
 
 					int childValue = myChild[i];
@@ -722,69 +701,83 @@ public class ISBDeuScore implements ISScore {
 							parentValuesPop[p] = data[parents_pop[p]][i];
 						}
 
-						int rowIndex = getRowIndex(dims, parentValuesPop);
+						int rowIndex = getRowIndex(dims_p, parentValuesPop);
 
 						np_jk[rowIndex][childValue]++;
 						np_j[rowIndex]++;
 					}
 				}
 
-			int r_pop = r;
-			if (sameParents.size() > 0 && notSameParents.size() == 0){
-				r_pop = r - rr;
-			}
-			
-			int r_tot = r_pop;
-			boolean pullCases = false;
-			if (pullCases){
-				if (parents.length == 0){
-					r_pop = 0;
-					r_tot = 1;
-				}
-				else{
-					r_tot = 1 + r_pop;
+			// computing priors
+			List<Integer> parents_all_list = new ArrayList<Integer>(IntStream.of(parents_pop).boxed().collect(Collectors.toList()));
+			for (int k = 0; k < parents_is.length; k++) {
+				if (!parents_all_list.contains(parents_is[k])){
+					parents_all_list.add(parents_is[k]);
 				}
 			}
-			else{
-				if(parents.length > 0){
-					r_tot = 1 + r_pop;
-				}	
-			}
-			
-//			System.out.println("node: "+ node);
-//			System.out.println("Pop parents" + Arrays.toString(parents_pop)); 
-//			System.out.println("PS parents" + Arrays.toString(parents));
-//			System.out.println("rows: " + r_tot);
-//			System.out.println(Arrays.toString(ni_jk));	
-//			System.out.println(Arrays.deepToString(np_jk));	
+			int[] parents_all = parents_all_list.stream().mapToInt(i->i).toArray();
+			Arrays.sort(parents_all);
+			int[] dims_all = getDimentions(parents_all);
 
+			// Number of parent states  in POP, IS, and both.
+			int r_all = computeAllParentStates(parents_all, dims_all);
+			Map<List<Integer>, Double> row_priors = new HashMap<List<Integer>, Double>();
+
+			for (int i = 0; i < r_all; i++){
+				int[] rowValues = getParentValuesForCombination(i, dims_all);
+				row_priors.put(Arrays.stream(rowValues).boxed().collect(Collectors.toList()), 1.0/r_all);
+			}
+			
 			double scoreIS = 0.0, scorePop = 0.0, score = 0.0;
-			final double cellPrior = getSamplePrior() / (K * r_tot);
-			final double rowPrior = getSamplePrior() / (r_tot);
+			
+			// compute IS score
+			if (parents_is.length>0){
+				
+				// K2 prior 
+//				double rowPrior_i = getSamplePrior() * K;
+//				double cellPrior_i = getSamplePrior();
+				
+				double rowPrior_i = computeRowPrior(parents_is, parentValuesTest, parents_all, row_priors);
+				rowPrior_i = getSamplePrior() * rowPrior_i;
+				double cellPrior_i = rowPrior_i / K;
+				
+				for (int k = 0; k < K; k++) {
+					scoreIS += Gamma.logGamma(cellPrior_i + ni_jk[k]);
+				}
 
-			for (int j = 0; j < r; j++) {
-				if(np_j[j]>0){
-					scorePop -= Gamma.logGamma(rowPrior + np_j[j]);
-
+				scoreIS -= K * Gamma.logGamma(cellPrior_i);
+				scoreIS -= Gamma.logGamma(rowPrior_i + ni_j);
+				scoreIS += Gamma.logGamma(rowPrior_i);
+			}
+			
+			// re-compute pop score
+			for (int j = 0; j < r_p; j++) {
+				
+				// K2 prior		
+//				double rowPrior_p = getSamplePrior() * K;
+//				double cellPrior_p = getSamplePrior();
+				
+				int[] parentValuesPop = new int[parents_pop.length];
+				parentValuesPop = getParentValuesForCombination(j, dims_p);
+				double rowPrior_p = computeRowPrior(parents_pop, parentValuesPop, parents_all, row_priors);
+				rowPrior_p = getSamplePrior() * rowPrior_p;
+				double cellPrior_p = rowPrior_p / K ;
+				
+				if(rowPrior_p > 0){	
+					scorePop -= Gamma.logGamma(rowPrior_p + np_j[j]);
 					for (int k = 0; k < K; k++) {
-						if(np_jk[j][k] > 0){
-							scorePop += Gamma.logGamma(cellPrior + np_jk[j][k]);
-						}
+//						if(np_jk[j][k] > 0){
+						scorePop += Gamma.logGamma(cellPrior_p + np_jk[j][k]);
+//						}
+						scorePop -= Gamma.logGamma(cellPrior_p);
 					}
+					scorePop += Gamma.logGamma(rowPrior_p);
 				}
 			}
 
 
-			scorePop += (r_pop) * Gamma.logGamma(rowPrior);
-			scorePop -= K * (r_pop) * Gamma.logGamma(cellPrior);
-
-			for (int k = 0; k < K; k++) {
-				scoreIS += Gamma.logGamma(cellPrior + ni_jk[k]);
-			}
-			
-			scoreIS -= K * Gamma.logGamma(cellPrior);
-			scoreIS -= Gamma.logGamma(rowPrior + ni_j);
-			scoreIS += Gamma.logGamma(rowPrior);
+//			scoreIS += getPriorForStructure(node, parents_is, parents_pop, children_pop);
+//			scorePop += getPriorForStructure(parents_pop.length);
 			score = scorePop + scoreIS;
 			return score;
 		}
