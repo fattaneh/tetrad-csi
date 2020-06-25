@@ -184,9 +184,9 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 	public double computeInd(Node x, Node y, Node... z) {
 		List<Node> z_list = new ArrayList<>();
         Collections.addAll(z_list, z);
-//		System.out.println("---------------------");
+//        System.out.println("---------------------");
 //		System.out.println(x + " _||_ " + y +" | " + z_list);
-
+		
 		double p_ind = Double.NaN, d_ind = 0.0, d_all = 0.0;
 
 		int _x = this.indices.get(x);
@@ -200,10 +200,14 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 			_xz[i] = _z[i];
 			r *= this.nodeDimensions[_z[i]];
 		}
+//		System.out.println("x dim: " + this.nodeDimensions[_x]);
+//		System.out.println("y dim: " + this.nodeDimensions[_y]);
+//		System.out.println("z dim: " + r);
+
 		_xz[_z.length] = _x;
 //		Arrays.sort(_xz);
-		int r2 = r * this.nodeDimensions[_x];
 		
+		int r2 = r * this.nodeDimensions[_x];
 
 		double cellPrior_xz = this.score.getSamplePrior() / (this.nodeDimensions[_x] * r);
 		double cellPrior_yz = this.score.getSamplePrior() / (this.nodeDimensions[_y] * r);
@@ -212,9 +216,7 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 		double rowPrior_yz = this.score.getSamplePrior() / (r);
 		double rowPrior_yxz = this.score.getSamplePrior() / (r2);
 
-
-//		System.out.println("_x_values: " + this.nodeDimensions[_x]);
-//		System.out.println("_y_values: " + this.nodeDimensions[_y]);
+		
 		double priorInd = Math.log(this.prior) / r;  
 		double priorDep = Math.log(1 - Math.exp(priorInd));
 //		double d_xz = 0.0, d_yz = 0.0, d_yxz = 0.0;
@@ -231,21 +233,25 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 			CountObjects counts_xz = score_z.localCounts(_x, _z);
 			CountObjects counts_yz = score_z.localCounts(_y, _z);
 			CountObjects counts_yxz = score_z.localCounts(_y, _xz);
-//			System.out.println("d_xz: " + Arrays.deepToString(counts_xz.n_jk));
-//			System.out.println("d_yz: " + Arrays.deepToString(counts_yz.n_jk));
-//			System.out.println("d_yxz: " + Arrays.deepToString(counts_yxz.n_jk));
-//			System.out.println("d_yxz: " + Arrays.toString(counts_yxz.n_j));
+//			System.out.println("xz.n_jk: " + Arrays.deepToString(counts_xz.n_jk));
+//			System.out.println("xz.n_j: " + Arrays.toString(counts_xz.n_j));
+//			
+//			System.out.println("yz.n_jk: " + Arrays.deepToString(counts_yz.n_jk));
+//			System.out.println("yz.n_j: " + Arrays.toString(counts_yz.n_j));
+//			
+//			System.out.println("yxz.n_jk: " + Arrays.deepToString(counts_yxz.n_jk));
+//			System.out.println("yxz.n_j: " + Arrays.toString(counts_yxz.n_j));
+			
 			// compute d_{x|z}
 			int [] n_j = counts_xz.n_j;
 			int [][] n_jk = counts_xz.n_jk;
-//			System.out.println("d_xz b: " + d_xz);
 			d_xz -= Gamma.logGamma(rowPrior_xz + n_j[j]);
 			d_xz += Gamma.logGamma(rowPrior_xz);
 			for (int k = 0; k < this.nodeDimensions[_x]; k++) {
 				d_xz += Gamma.logGamma(cellPrior_xz + n_jk[j][k]);
 				d_xz -= Gamma.logGamma(cellPrior_xz);
 			}
-//			System.out.println("d_xz a: " + d_xz);
+//			System.out.println("d_xz: " + d_xz);
 
 			// compute d_{y|z}
 			n_j = counts_yz.n_j;
@@ -259,7 +265,7 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 			}
 //			d_yz += priorInd;
 
-//			System.out.println("d_yz a: " + d_yz);
+//			System.out.println("d_yz: " + d_yz);
 
 			// compute d_{y|x,z}
 			n_j = counts_yxz.n_j;
@@ -272,7 +278,7 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 				_xz_dim[v] = _z_dim[v];
 			}
 //			System.out.println("_xz_values b: " + Arrays.toString(_xz_values));
-//
+
 			for (int j2 = 0; j2 < this.nodeDimensions[_x]; j2++) {
 				_xz_values[_z.length] = j2;
 //				System.out.println("_xz_values a: " + Arrays.toString(_xz_values));
@@ -292,7 +298,9 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 			}
 
 		p_ind = Math.exp(d_ind - d_all);
+
 //		System.out.println("p_ind: " + p_ind);
+
 		return p_ind;
 	}
 	public int[] getParentValues(int nodeIndex, int rowIndex, int[] dims) {

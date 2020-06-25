@@ -19,6 +19,8 @@ import edu.cmu.tetrad.bayes.BayesIm;
 import edu.cmu.tetrad.bayes.BayesPm;
 import edu.cmu.tetrad.bayes.DirichletBayesIm;
 import edu.cmu.tetrad.bayes.DirichletEstimator;
+import edu.cmu.tetrad.bayes.ISMlBayesIm;
+import edu.cmu.tetrad.bayes.MlBayesIm;
 import edu.cmu.tetrad.data.*;
 import edu.cmu.tetrad.graph.*;
 import edu.cmu.tetrad.util.RandomUtil;
@@ -28,7 +30,7 @@ import nu.xom.Builder;
 import nu.xom.Document;
 import nu.xom.ParsingException;
 
-public class RBExperiments {
+public class RBExperiments_sim {
 
 	private int depth = 5;
 	private static String directory;
@@ -79,93 +81,103 @@ public class RBExperiments {
 
 
 	public static void main(String[] args) throws IOException {
-//		NodeEqualityMode.setEqualityMode(NodeEqualityMode.Type.OBJECT);
-
 		// read and process input arguments
-		double alpha = 0.05, lower = 0.3, upper = 0.7, numLatentConfounders = 0.2;
-		int numCases = 1000, numModels = 100, numBootstrapSamples = 500;
+		Long seed = 1454147771L;
+		String data_path =  "/Users/fattanehjabbari/CCD-Project/CS-BN/experiments_newBSC_Chi2";
+		double alpha = 0.05, cutoff = 0.5, edgesPerNode = 6.0, latent = 0.2,lower = 0.3, upper = 0.7;
+		int numVars = 10, numCases = 1000, numTests = 1000, numActualTest = 100, numSim = 10,
+				numModels = 100, numBootstrapSamples = 500;
 		boolean threshold1 = false, threshold2 = true;
 
-		String modelName = "Alarm", data_path =  "/Users/fattanehjabbari/CCD-Project/CS-BN/experiments_newBSC";
-//				dataPath = "/Users/fattanehjabbari/CCD-Project/CS-BN/";
-
-		for (int i = 0; i < args.length; i++) {
+		System.out.println(Arrays.asList(args));
+		for ( int i = 0; i < args.length; i++ ) {   
 			switch (args[i]) {
-			case "-c":
-				numCases = Integer.parseInt(args[i + 1]);
-				break;
-			case "-lv":
-				numLatentConfounders = Double.parseDouble(args[i + 1]);
-				break;
-			case "-bs":
-				numBootstrapSamples = Integer.parseInt(args[i + 1]);
-				break;
+			case "-th1":
+				threshold1 = Boolean.parseBoolean(args[i+1]);
+				break;	
+			case "-th2":
+				threshold2 = Boolean.parseBoolean(args[i+1]);
+				break;	
 			case "-alpha":
-				alpha = Double.parseDouble(args[i + 1]);
+				alpha = Double.parseDouble(args[i+1]);
 				break;
-			case "-m":
-				numModels = Integer.parseInt(args[i + 1]);
+			case "-cutoff":
+				cutoff = Double.parseDouble(args[i+1]);
 				break;
-			case "-net":
-				modelName = args[i + 1];
-				break;
-			case "-t1":
-				threshold1 = Boolean.parseBoolean(args[i + 1]);
-				break;
-			case "-t2":
-				threshold2 = Boolean.parseBoolean(args[i + 1]);
-				break;
-			case "-low":
-				lower = Double.parseDouble(args[i + 1]);
-				break;
-			case "-up":
-				upper = Double.parseDouble(args[i + 1]);
-				break;
-			case "-out":
-				data_path = args[i + 1];
-				break;
-//			case "-data":
-//				dataPath = args[i + 1];
+//			case "-kappa":
+//				kappa = Double.parseDouble(args[i+1]);
 //				break;
+			case "-epn":
+				edgesPerNode = Double.parseDouble(args[i+1]);
+				break;
+			case "-l":
+				latent = Double.parseDouble(args[i+1]);
+				break;
+//			case "-pr":
+//				prior = Double.parseDouble(args[i+1]);
+//				break;
+			case "-v":
+				numVars = Integer.parseInt(args[i+1]);
+				break;
+			case "-test":
+				numActualTest = Integer.parseInt(args[i+1]);
+				break;
+			case "-train":
+				numCases = Integer.parseInt(args[i+1]);
+				break;
+//			case "-time":
+//				time = Integer.parseInt(args[i+1]);
+//				break;
+			case "-sim":
+				numSim = Integer.parseInt(args[i+1]);
+				break;
+//			case "-nsim":
+//				nSim = Integer.parseInt(args[i+1]);
+//				break;
+			case "-seed":
+				seed =Long.parseLong(args[i+1]);
+				break;
+			case "-dir":
+				data_path = args[i+1];
+				break;
 			}
 		}
-
 		// create an instance of class and run an experiment on it
-		RBExperiments.directory = "/Users/fattanehjabbari/CCD-Project/CS-BN/";
+		RBExperiments_sim.directory = "/Users/fattanehjabbari/CCD-Project/CS-BN/";
+		
+		int[] variableSize = new int[]{10, 20, 50};
+		int[] edges = new int[]{2, 4, 6};
 		double[] lv = new double[]{0.0, 0.1, 0.2};
 		int[] cases = new int[]{200, 1000, 5000};
+		
 		for (int numCase: cases){
-			for (double numLatentConfounder: lv){
-					RBExperiments DFC = new RBExperiments();
-					DFC.experiment(modelName, numCase, numModels, numBootstrapSamples, alpha, numLatentConfounder, threshold1,
-							threshold2, lower, upper, data_path);
+			for (int var: variableSize){
+				for (int epn: edges){
+					for (double nlv: lv){
+						for (int i = 0; i < 10; i++){
+							RBExperiments_sim rbs = new RBExperiments_sim();
+							rbs.experiment(numModels,alpha, threshold1, threshold2, cutoff, numBootstrapSamples, var, epn, nlv, numCase, numTests, numActualTest, numSim, data_path, seed, lower, upper);
+						}
+					}
+				}
 			}
 		}
 	}
 
 
-	public void experiment(String modelName, int numCases, int numModels, int numBootstrapSamples, double alpha,
-			double numLatentConfounders, boolean threshold1, boolean threshold2, double lower, double upper, String data_path) {
+	public void experiment(int numModels ,double alpha, boolean threshold1, boolean threshold2, double cutoff, int numBootstrapSamples,
+			int numVars, double edgesPerNode, double latent, int numCases, int numTests, int numActualTest, int numSim, String data_path, long seed, double lower, double upper){
 		
-		RandomUtil.getInstance().setSeed(1454147771L);
-		// get the Bayesian network (graph and parameters) of the given model
-		BayesIm im = getBayesIM(modelName);
-		System.out.println("im:" + im);
-		BayesPm pm = im.getBayesPm();
-		Graph dag = pm.getDag();
-		System.out.println("im.nodes:" + im.getNumNodes());
-		System.out.println("dag.nodes:" + dag.getNumNodes());
+//		RandomUtil.getInstance().setSeed(seed + 10 * sim);
+//		RandomUtil.getInstance().setSeed(1454147771L);
 
-		// set the "numLatentConfounders" percentage of variables to be latent
-		int numVars = im.getNumNodes();
-		int numEdges = dag.getNumEdges();
-		int LV = (int) Math.floor(numLatentConfounders * numVars);
-		GraphUtils.fixLatents4(LV, dag);
-		System.out.println("Variables set to be latent:" +getLatents(dag));
-		
-		int numSim = 10;
-		System.out.println("# nodes: " + numVars + ", # edges: "+ numEdges + ", # numLatents: "+ LV + ", # training: " + numCases);
-		
+		int minCat = 2;
+		int maxCat = 4;
+		final int numEdges = (int) (numVars * edgesPerNode);
+		int numLatents = (int) Math.floor(numVars * latent);
+
+		System.out.println("# nodes: " + numVars + ", # edges: "+ numEdges + ", # numLatents: "+ numLatents + ", # training: " + numCases + ", # test: "+ numActualTest);
+				
 		double[] arrP = new double[numSim], arrR = new double[numSim], adjP = new double[numSim], adjR = new double[numSim], 
 				added = new double[numSim], removed = new double[numSim], reoriented = new double[numSim], shdStrict = new double[numSim], shdLenient = new double[numSim];
 
@@ -176,10 +188,12 @@ public class RBExperiments {
 				addedD = new double[numSim], removedD = new double[numSim], reorientedD = new double[numSim], shdStrictD = new double[numSim], shdLenientD = new double[numSim];
 		
 		try {
-			//			File dir = new File(data_path+ "/simulation-Gfci-BDeu-WO/");
-			File dir = new File(data_path+ "/simulation-Fci-KnownBNs/");
+			File dir = new File(data_path+ "/simulation-Fci/");
+			if (!threshold1){
+				cutoff = Double.NaN;
+			}
 			dir.mkdirs();
-			String outputFileName = modelName + "V" + numVars +"-E"+ numEdges +"-L"+ numLatentConfounders + "-N" + numCases + "-Th1" + threshold1+".csv";
+			String outputFileName = "V"+numVars +"-E"+ edgesPerNode +"-L"+ latent + "-N" + numCases + "-Th1" + threshold1  + "-C" + cutoff +"-Fci" +".csv";
 
 			File file = new File(dir, outputFileName);
 			if (file.exists() && file.length() != 0){ 
@@ -191,11 +205,27 @@ public class RBExperiments {
 			throw new RuntimeException(e);
 		}
 
+
 		// loop over simulations
 		for (int s = 0; s < numSim; s++){
+			RandomUtil.getInstance().setSeed(1454147771L + 10 * s);
 
 			System.out.println("simulation: " + s);
 
+			List<Node> vars = createVariables(numVars);
+
+			// generate true BN and its parameters
+			Graph dag = GraphUtils.randomGraphRandomForwardEdges(vars, numLatents, numEdges, 15, 10, 10, false, true);
+			System.out.println("Latent variables: " + getLatents(dag));
+
+			System.out.println("generating pm ...");
+
+			BayesPm pm = new BayesPm(dag, minCat, maxCat);
+			System.out.println("generating im ...");
+
+			MlBayesIm im = new MlBayesIm(pm, ISMlBayesIm.RANDOM);
+
+			System.out.println("simulating data ...");
 			// simulate train and test data from BN
 			DataSet fullTrainData = im.simulateData(numCases, true);
 
@@ -397,7 +427,14 @@ public class RBExperiments {
 		System.out.println("----------------------");
 
 	}
-
+	private List<Node> createVariables(int numVars) {
+		// create variables
+		List<Node> vars = new ArrayList<>();
+		for (int i = 0; i < numVars; i++) {
+			vars.add(new DiscreteVariable("X" + i));
+		}
+		return vars;
+	}
 //	public void experiment_ECML(String modelName, int numCases, int numModels, int numBootstrapSamples, double alpha,
 //			String filePath, int round) {
 //		// 32827167123L

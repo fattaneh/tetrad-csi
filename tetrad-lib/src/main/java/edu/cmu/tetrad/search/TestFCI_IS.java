@@ -35,7 +35,7 @@ import edu.cmu.tetrad.util.RandomUtil;
 import edu.cmu.tetrad.util.TextTable;
 
 
-public class TestGFCI_IS {
+public class TestFCI_IS {
 	private PrintStream out;
 	public static void main(String[] args) {
 		// read and process input arguments
@@ -96,7 +96,7 @@ public class TestGFCI_IS {
 			}
 		}
 
-		TestGFCI_IS t = new TestGFCI_IS();
+		TestFCI_IS t = new TestFCI_IS();
 		t.test_sim(nSim,alpha, threshold, cutoff, kappa, numVars, edgesPerNode, latent, numCases, numTests, numActualTest, numSim, data_path, time, seed, prior);
 	}
 	public void test_sim(int sim ,double alpha, boolean threshold, double cutoff, double kappa, int numVars, double edgesPerNode, double latent, int numCases, int numTests, int numActualTest, int numSim, String data_path, int time, long seed, double prior){

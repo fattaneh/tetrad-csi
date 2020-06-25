@@ -29,15 +29,15 @@ import edu.cmu.tetrad.util.RandomUtil;
 import edu.cmu.tetrad.util.TextTable;
 
 
-public class TestGFCI_PW2 {
+public class TestFCI_PW2 {
 	private PrintStream out;
 	public static void main(String[] args) {
 		// read and process input arguments
 		Long seed = 1454147771L;
 		String data_path =  "/Users/fattanehjabbari/CCD-Project/CS-BN/experiments_newBSC_Chi2";
 		boolean threshold = true;
-		double alpha = 0.05, cutoff = 0.5, edgesPerNode = 6.0, latent = 0.2, kappa = 0.5, prior = 0.5;
-		int numVars = 10, numCases = 1000, numTests = 1000, numActualTest = 100, numSim = 10, time = 10, nSim=1;
+		double alpha = 0.05, cutoff = 0.5, edgesPerNode = 2.0, latent = 0.2, kappa = 0.5, prior = 0.5;
+		int numVars = 11, numCases = 1000, numTests = 1000, numActualTest = 100, numSim = 10, time = 10, nSim=1;
 
 		System.out.println(Arrays.asList(args));
 		for ( int i = 0; i < args.length; i++ ) {   
@@ -90,7 +90,7 @@ public class TestGFCI_PW2 {
 			}
 		}
 		for (int c = 5; c <= 5; c++){
-			TestGFCI_PW2 t = new TestGFCI_PW2();
+			TestFCI_PW2 t = new TestFCI_PW2();
 			cutoff = 0.5;
 			t.test_sim(nSim,alpha, threshold, cutoff, kappa, numVars, edgesPerNode, latent, numCases, numTests, numActualTest, numSim, data_path, time, seed, prior);
 		}

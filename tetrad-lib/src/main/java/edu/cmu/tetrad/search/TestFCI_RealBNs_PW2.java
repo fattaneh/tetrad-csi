@@ -34,7 +34,7 @@ import nu.xom.Document;
 import nu.xom.ParsingException;
 
 
-public class TestGFCI_RealBNs_PW2 {
+public class TestFCI_RealBNs_PW2 {
 	private static String directory;
 	private PrintStream out;
 	public static void main(String[] args) {
@@ -44,8 +44,8 @@ public class TestGFCI_RealBNs_PW2 {
 		boolean threshold = true;
 
 		// read and process input arguments
-		double alpha = 0.05, cutoff = 0.9, latent = 0.0, prior = 0.5;
-		int numCases = 10000, depth = 5;
+		double alpha = 0.05, cutoff = 0.9, latent = 0.2, prior = 0.5;
+		int numCases = 1000, depth = 5;
 		String modelName = "Alarm", filePath = "/Users/fattanehjabbari/CCD-Project/CS-BN/experiments_newBSC",
 				dataPath = "/Users/fattanehjabbari/CCD-Project/CS-BN/";
 		for (int i = 0; i < args.length; i++) {
@@ -79,19 +79,19 @@ public class TestGFCI_RealBNs_PW2 {
 		System.out.println(Arrays.asList(args));
 
 		// create an instance of class and run an experiment on it
-		TestGFCI_RealBNs_PW2.directory = dataPath;
-		double[] lv = new double[]{0.0};//, 0.1, 0.2};
-		int[] cases = new int[]{1000};//, 1000, 2000};
+		TestFCI_RealBNs_PW2.directory = dataPath;
+		double[] lv = new double[]{0.0, 0.1, 0.2};
+		int[] cases = new int[]{10000};//, 1000, 2000};
 		for (int c: cases){
 			for (double l: lv){
-				for (int i = 0; i < 10; i++){
+//				for (int i = 0; i < 10; i++){
 					latent = l;
 					numCases = c;
-					TestGFCI_RealBNs_PW2 t = new TestGFCI_RealBNs_PW2();
+					TestFCI_RealBNs_PW2 t = new TestFCI_RealBNs_PW2();
 					cutoff = 0.5;
 					t.test_sim(modelName, alpha, threshold, cutoff, depth, latent, numCases, data_path, seed, prior);
 
-				}
+//				}
 			}
 		}
 	}
@@ -104,7 +104,8 @@ public class TestGFCI_RealBNs_PW2 {
 		System.out.println("im:" + im);
 		BayesPm pm = im.getBayesPm();
 		Graph trueBN = pm.getDag();
-
+		System.out.println("im.nodes:" + im.getNumNodes());
+		System.out.println("dag.nodes:" + trueBN.getNumNodes());
 		// set the "numLatentConfounders" percentage of variables to be latent
 		int numVars = im.getNumNodes();
 		int numEdges = trueBN.getNumEdges();
@@ -113,7 +114,7 @@ public class TestGFCI_RealBNs_PW2 {
 		System.out.println("Variables set to be latent:" +getLatents(trueBN));
 		
 		int numLatents = (int) Math.floor(numVars * latent);
-		int numSim = 1;
+		int numSim = 10;
 		System.out.println("# nodes: " + numVars + ", # edges: "+ numEdges + ", # numLatents: "+ numLatents + ", # training: " + numCases);
 		double[] arrP = new double[numSim], arrR = new double[numSim], adjP = new double[numSim], adjR = new double[numSim], 
 				added = new double[numSim], removed = new double[numSim], reoriented = new double[numSim], shdStrict = new double[numSim], shdLenient = new double[numSim];
@@ -124,7 +125,7 @@ public class TestGFCI_RealBNs_PW2 {
 
 		try {
 			//			File dir = new File(data_path+ "/simulation-Gfci-BDeu-WO/");
-			File dir = new File(data_path+ "/simulation-Fci/" +"prior" + prior);
+			File dir = new File(data_path+ "/simulation-GFci/" +"prior" + prior);
 			dir.mkdirs();
 			String outputFileName = modelName + "V" + numVars +"-E"+ numEdges +"-L"+ latent + "-N" + numCases + "-Th" + threshold  + "-C" + cutoff +"-prior" + prior +"-Fci" +".csv";
 
@@ -149,18 +150,7 @@ public class TestGFCI_RealBNs_PW2 {
 			// get the observed part of the data only
 			DataSet trainData = DataUtils.restrictToMeasured(fullTrainData);
 
-			// learn the population model
-			IndTestProbabilisticBDeu2 indTest_pop = new IndTestProbabilisticBDeu2(trainData, prior);
-			indTest_pop.setThreshold(threshold);
-			indTest_pop.setCutoff(cutoff);
-			//			BDeuScore scoreP = new BDeuScore(trainData);
-
-			Rfci fci_pop = new Rfci(indTest_pop);
-			fci_pop.setDepth(depth);
-			Graph graphP = fci_pop.search();
-			System.out.println("new method:" + graphP.getEdges());
-
-			// compute statistics
+			// compute true PAG
 			final DagToPag2 dagToPag = new DagToPag2(trueBN);
 			Graph truePag = dagToPag.convert();
 			truePag = GraphUtils.replaceNodes(truePag, trueBN.getNodes());
@@ -169,14 +159,25 @@ public class TestGFCI_RealBNs_PW2 {
 			System.out.println("true dag:" + trueBN.getEdges());
 			System.out.println("PAG DONE!!!!");
 
+			// learn the population model
+			IndTestProbabilisticBDeu2 indTest_pop = new IndTestProbabilisticBDeu2(trainData, prior);
+			indTest_pop.setThreshold(threshold);
+			indTest_pop.setCutoff(cutoff);
+			BDeuScore scoreP = new BDeuScore(trainData);
+			GFci fci_pop = new GFci(indTest_pop, scoreP);
+//			fci_pop.setDepth(depth);
+			Graph graphP = fci_pop.search();
+			System.out.println("new method:" + graphP.getEdges());
+
+		
 			// learn the population model with old test
 //			indTest_IS indTest_IS = new IndTestProbabilisticBDeu(trainData, prior);
 
 //			indTest_IS.setThreshold(threshold);
 //			indTest_IS.setCutoff(cutoff);
 			IndTestChiSquare indTest_IS = new IndTestChiSquare(trainData, alpha);
-			Rfci Fci_IS = new Rfci(indTest_IS);
-			Fci_IS.setDepth(depth);
+			GFci Fci_IS = new GFci(indTest_IS, scoreP);
+//			Fci_IS.setDepth(depth);
 			Graph graphI = Fci_IS.search();
 			System.out.println("old method:" + graphI.getEdges());
 
@@ -243,9 +244,6 @@ public class TestGFCI_RealBNs_PW2 {
 			reoriented[s] = cmpP.getEdgesReorientedTo().size();
 			shdStrict[s] = cmpP.getShdStrict();
 			shdLenient[s] = cmpP.getShdLenient();
-
-
-
 
 		}
 
