@@ -88,13 +88,16 @@ public class TestIGFCI_TCGA {
 		DataSet knowledgeData = readData(pathToKnowledge);
 		for (int i = 0 ; i < knowledgeData.getNumRows(); i++){
 			knowledge.setForbidden(knowledgeData.getObject(i, 0).toString(), knowledgeData.getObject(i, 1).toString());
-		}			
+			knowledge.setForbidden(knowledgeData.getObject(i, 1).toString(), knowledgeData.getObject(i, 0).toString());
+
+		}
+		
 //		System.out.println(knowledge);
 
 		
 		// learn the population model using all training data
 		System.out.println("begin population search");
-		IndTestProbabilisticBDeu indTest_pop = new IndTestProbabilisticBDeu(bs, 0.5);
+		IndTestProbabilisticBDeu2 indTest_pop = new IndTestProbabilisticBDeu2(bs, 0.5);
 		indTest_pop.setThreshold(threshold);
 		indTest_pop.setCutoff(cutoff);
 		BDeuScore scoreP = new BDeuScore(bs);
@@ -117,7 +120,7 @@ public class TestIGFCI_TCGA {
 			trainData.removeRows(new int[]{i});
 
 			// Generate the bootstrap samples			
-			IndTestProbabilisticISBDeu indTest_IS = new IndTestProbabilisticISBDeu(bs, test, indTest_pop.getH(), graphP);
+			IndTestProbabilisticISBDeu2 indTest_IS = new IndTestProbabilisticISBDeu2(bs, test, indTest_pop.getH(), graphP);
 			indTest_IS.setThreshold(threshold);
 			indTest_IS.setCutoff(cutoff);
 

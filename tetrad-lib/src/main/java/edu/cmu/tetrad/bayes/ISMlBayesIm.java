@@ -519,6 +519,13 @@ public final class ISMlBayesIm implements BayesIm {
 		probs[nodeIndex][rowIndex][colIndex] = value;
 	}
 
+	 @Override
+	    public void setProbability(int nodeIndex, double[][] probMatrix) {
+	        for (int i = 0; i < probMatrix.length; i++) {
+	            System.arraycopy(probMatrix[i], 0, probs[nodeIndex][i], 0, probMatrix[i].length);
+	        }
+	    }
+	 
 	/**
 	 * @return the index of the node with the given name in the specified
 	 * BayesIm.
