@@ -43,7 +43,6 @@ import edu.cmu.tetrad.util.RandomUtil;
 import edu.cmu.tetrad.util.TextTable;
 import edu.pitt.dbmi.data.reader.tabular.VerticalDiscreteTabularDatasetFileReader;
 import edu.pitt.dbmi.data.reader.tabular.VerticalDiscreteTabularDatasetReader;
-import edu.cmu.tetrad.test.*;
 //class KeyMB {
 //
 //	public final int n_a;
@@ -75,140 +74,140 @@ import edu.cmu.tetrad.test.*;
 //}
 public class TestGFCI_IS {
 	private PrintStream out;
-	public static void main(String[] args) {
-		// read and process input arguments
-		Long seed = 1454147770L;
-		String data_path =  System.getProperty("user.dir");
-		boolean threshold = true;
-		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/UCI/";
-		String dataName = "agaricus-lepiota";
-		String pathToData = pathToFolder + dataName + ".csv";
-		String target = "y";
-		
-		// Read in the data
-		DataSet trainDataOrig = readData(pathToData);
-		System.out.println(trainDataOrig.getNumRows() +", " + trainDataOrig.getNumColumns());
-
-		double alpha = 0, cutoff = 0.5, latent = 0.2, kappa = 0.5;
-		int numVars = trainDataOrig.getNumColumns(); 
-		int numCases = trainDataOrig.getNumRows();
-		
-		// Create the knowledge
-
-		// learn the population model using all training data
-		IndTestProbabilisticBDeu indTest_pop = new IndTestProbabilisticBDeu(trainDataOrig);
-		indTest_pop.setThreshold(threshold);
-		indTest_pop.setCutoff(cutoff);
-		BDeuScore scoreP = new BDeuScore(trainDataOrig);
-		GFci fci_pop = new GFci(indTest_pop, scoreP);
-		Graph graphP = fci_pop.search();
-	
-		PrintStream logFile;
-		try {
-			File dir = new File( pathToFolder + "/outputs/" + dataName);
-			dir.mkdirs();
-			String outputFileName = dataName  +"_log.txt";
-			File fileAUC = new File(dir, outputFileName);
-			logFile = new PrintStream(new FileOutputStream(fileAUC));
-
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-		
-		logFile.println(trainDataOrig.getNumRows() +", " + trainDataOrig.getNumColumns());
-		logFile.println("Pop graph:" + graphP.getEdges());
-
-		
-		for (int p = 5; p <= 5; p++){
-
-			double k_add =  p/10.0; //Math.pow(10, -1.0*p);
-			
-			double average_llr = 0.0;
-
-			Map <KeyMB, Double> stats= new HashMap<KeyMB, Double>();
-			PrintStream outForAUC;
-			try {
-				File dir = new File( pathToFolder + "/outputs/" + dataName);
-				dir.mkdirs();
-				String outputFileName = dataName + "-AUROC-Kappa"+ k_add  +".csv";
-				File fileAUC = new File(dir, outputFileName);
-				outForAUC = new PrintStream(new FileOutputStream(fileAUC));
-
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-			
-			System.out.println("kappa = " + k_add);
-			logFile.println("kappa = " + k_add);
-			
-
-			outForAUC.println("y, population-FGES, instance-specific-FGES");//, DEGs");
-			double added = 0.0, removed = 0.0, reoriented = 0.0, shdStrict = 0.0, shdLenient = 0.0;
-
-			//LOOCV loop
-			for (int i = 0; i < trainDataOrig.getNumRows(); i++){
-				
-				DataSet trainData = trainDataOrig.copy();
-				DataSet test = trainDataOrig.subsetRows(new int[]{i});
-				trainData.removeRows(new int[]{i});
-				
-				// learn the instance-specific model
-				IndTestProbabilisticISBDeu indTest_IS = new IndTestProbabilisticISBDeu(trainData, test, indTest_pop.getH(), graphP);
-				indTest_IS.setThreshold(threshold);
-				indTest_IS.setCutoff(cutoff);
-
-				ISBDeuScore scoreI = new ISBDeuScore(trainData, test);
-				scoreI.setKAddition(kappa);
-				scoreI.setKDeletion(kappa);
-				scoreI.setKReorientation(kappa);
-
-				GFci_IS Fci_IS = new GFci_IS(indTest_IS, scoreI, fci_pop.FgesGraph);
-				Graph graphI = Fci_IS.search();
-
-				//graph comparison
-				GraphUtils.GraphComparison cmp = SearchGraphUtils.getGraphComparison(graphI, graphP, true);
-				added += cmp.getEdgesAdded().size();
-				removed += cmp.getEdgesRemoved().size();
-				reoriented += cmp.getEdgesReorientedTo().size();
-				shdStrict += cmp.getShdStrict();
-				shdLenient += cmp.getShdLenient();
-
-				int n_a = cmp.getEdgesAdded().size();
-				int n_d = cmp.getEdgesRemoved().size();
-				int n_r = cmp.getEdgesReorientedFrom().size();
-
-				KeyMB cur_key = new KeyMB(n_a, n_d, n_r);
-				if(stats.get(cur_key)!=null)
-					stats.put(cur_key, stats.get(cur_key) + 1.0);
-				else
-					stats.put(cur_key, 1.0);
-
-			}
-		
-			for (KeyMB k : stats.keySet()){
-				System.out.println(k.print(k) + ":" + (stats.get(k)/trainDataOrig.getNumRows())*100);
-				logFile.println(k.print(k) + ":" + (stats.get(k)/trainDataOrig.getNumRows())*100);
-
-			}
-			added /= trainDataOrig.getNumRows();
-			removed /= trainDataOrig.getNumRows();
-			reoriented /= trainDataOrig.getNumRows();
-			shdStrict /= trainDataOrig.getNumRows();
-			shdLenient /= trainDataOrig.getNumRows();
-			System.out.println("average_llr: " + (average_llr/ trainDataOrig.getNumRows()));
-			logFile.println("avg added: " + added);
-			logFile.println("avg removed: " + removed);
-			logFile.println("avg reoriented: " + reoriented);
-			logFile.println("avg shdStrict: " + shdStrict);
-			logFile.println("avg shdLenient: " + shdLenient);
-
-			System.out.println("-----------------");
-			logFile.println("-----------------");
-			outForAUC.close();
-		}
-		logFile.close();
-
-	}
+//	public static void main(String[] args) {
+//		// read and process input arguments
+//		Long seed = 1454147770L;
+//		String data_path =  System.getProperty("user.dir");
+//		boolean threshold = true;
+//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/UCI/";
+//		String dataName = "agaricus-lepiota";
+//		String pathToData = pathToFolder + dataName + ".csv";
+//		String target = "y";
+//		
+//		// Read in the data
+//		DataSet trainDataOrig = readData(pathToData);
+//		System.out.println(trainDataOrig.getNumRows() +", " + trainDataOrig.getNumColumns());
+//
+//		double alpha = 0, cutoff = 0.5, latent = 0.2, kappa = 0.5;
+//		int numVars = trainDataOrig.getNumColumns(); 
+//		int numCases = trainDataOrig.getNumRows();
+//		
+//		// Create the knowledge
+//
+//		// learn the population model using all training data
+//		IndTestProbabilisticBDeu indTest_pop = new IndTestProbabilisticBDeu(trainDataOrig, 0.5);
+//		indTest_pop.setThreshold(threshold);
+//		indTest_pop.setCutoff(cutoff);
+//		BDeuScore scoreP = new BDeuScore(trainDataOrig);
+//		GFci fci_pop = new GFci(indTest_pop, scoreP);
+//		Graph graphP = fci_pop.search();
+//	
+//		PrintStream logFile;
+//		try {
+//			File dir = new File( pathToFolder + "/outputs/" + dataName);
+//			dir.mkdirs();
+//			String outputFileName = dataName  +"_log.txt";
+//			File fileAUC = new File(dir, outputFileName);
+//			logFile = new PrintStream(new FileOutputStream(fileAUC));
+//
+//		} catch (Exception e) {
+//			throw new RuntimeException(e);
+//		}
+//		
+//		logFile.println(trainDataOrig.getNumRows() +", " + trainDataOrig.getNumColumns());
+//		logFile.println("Pop graph:" + graphP.getEdges());
+//
+//		
+//		for (int p = 5; p <= 5; p++){
+//
+//			double k_add =  p/10.0; //Math.pow(10, -1.0*p);
+//			
+//			double average_llr = 0.0;
+//
+//			Map <KeyMB, Double> stats= new HashMap<KeyMB, Double>();
+//			PrintStream outForAUC;
+//			try {
+//				File dir = new File( pathToFolder + "/outputs/" + dataName);
+//				dir.mkdirs();
+//				String outputFileName = dataName + "-AUROC-Kappa"+ k_add  +".csv";
+//				File fileAUC = new File(dir, outputFileName);
+//				outForAUC = new PrintStream(new FileOutputStream(fileAUC));
+//
+//			} catch (Exception e) {
+//				throw new RuntimeException(e);
+//			}
+//			
+//			System.out.println("kappa = " + k_add);
+//			logFile.println("kappa = " + k_add);
+//			
+//
+//			outForAUC.println("y, population-FGES, instance-specific-FGES");//, DEGs");
+//			double added = 0.0, removed = 0.0, reoriented = 0.0, shdStrict = 0.0, shdLenient = 0.0;
+//
+//			//LOOCV loop
+//			for (int i = 0; i < trainDataOrig.getNumRows(); i++){
+//				
+//				DataSet trainData = trainDataOrig.copy();
+//				DataSet test = trainDataOrig.subsetRows(new int[]{i});
+//				trainData.removeRows(new int[]{i});
+//				
+//				// learn the instance-specific model
+//				IndTestProbabilisticISBDeu indTest_IS = new IndTestProbabilisticISBDeu(trainData, test, indTest_pop.getH(), graphP);
+//				indTest_IS.setThreshold(threshold);
+//				indTest_IS.setCutoff(cutoff);
+//
+//				ISBDeuScore scoreI = new ISBDeuScore(trainData, test);
+//				scoreI.setKAddition(kappa);
+//				scoreI.setKDeletion(kappa);
+//				scoreI.setKReorientation(kappa);
+//
+//				GFci_IS Fci_IS = new GFci_IS(indTest_IS, scoreI, fci_pop.FgesGraph);
+//				Graph graphI = Fci_IS.search();
+//
+//				//graph comparison
+//				GraphUtils.GraphComparison cmp = SearchGraphUtils.getGraphComparison(graphI, graphP, true);
+//				added += cmp.getEdgesAdded().size();
+//				removed += cmp.getEdgesRemoved().size();
+//				reoriented += cmp.getEdgesReorientedTo().size();
+//				shdStrict += cmp.getShdStrict();
+//				shdLenient += cmp.getShdLenient();
+//
+//				int n_a = cmp.getEdgesAdded().size();
+//				int n_d = cmp.getEdgesRemoved().size();
+//				int n_r = cmp.getEdgesReorientedFrom().size();
+//
+//				KeyMB cur_key = new KeyMB(n_a, n_d, n_r);
+//				if(stats.get(cur_key)!=null)
+//					stats.put(cur_key, stats.get(cur_key) + 1.0);
+//				else
+//					stats.put(cur_key, 1.0);
+//
+//			}
+//		
+//			for (KeyMB k : stats.keySet()){
+//				System.out.println(k.print(k) + ":" + (stats.get(k)/trainDataOrig.getNumRows())*100);
+//				logFile.println(k.print(k) + ":" + (stats.get(k)/trainDataOrig.getNumRows())*100);
+//
+//			}
+//			added /= trainDataOrig.getNumRows();
+//			removed /= trainDataOrig.getNumRows();
+//			reoriented /= trainDataOrig.getNumRows();
+//			shdStrict /= trainDataOrig.getNumRows();
+//			shdLenient /= trainDataOrig.getNumRows();
+//			System.out.println("average_llr: " + (average_llr/ trainDataOrig.getNumRows()));
+//			logFile.println("avg added: " + added);
+//			logFile.println("avg removed: " + removed);
+//			logFile.println("avg reoriented: " + reoriented);
+//			logFile.println("avg shdStrict: " + shdStrict);
+//			logFile.println("avg shdLenient: " + shdLenient);
+//
+//			System.out.println("-----------------");
+//			logFile.println("-----------------");
+//			outForAUC.close();
+//		}
+//		logFile.close();
+//
+//	}
 		
 	public void test_sim(double alpha, boolean threshold, double cutoff, double kappa, int numVars, double edgesPerNode, double latent, int numCases, int numTests, int numActualTest, int numSim, String data_path, int time, long seed){
 
@@ -282,7 +281,7 @@ public class TestGFCI_IS {
 
 			// learn the population model
 //			System.out.println("begin population search");
-			IndTestProbabilisticBDeu indTest_pop = new IndTestProbabilisticBDeu(trainData);
+			IndTestProbabilisticBDeu indTest_pop = new IndTestProbabilisticBDeu(trainData, 0.5);
 			indTest_pop.setThreshold(threshold);
 			indTest_pop.setCutoff(cutoff);
 //			IndTestChiSquare indTest_pop = new IndTestChiSquare(trainData, 0.05);

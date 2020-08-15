@@ -19,9 +19,10 @@ import edu.cmu.tetrad.bayes.BayesIm;
 import edu.cmu.tetrad.bayes.BayesPm;
 import edu.cmu.tetrad.bayes.DirichletBayesIm;
 import edu.cmu.tetrad.bayes.DirichletEstimator;
-import edu.cmu.tetrad.bayes.MlBayesIm;
 import edu.cmu.tetrad.data.*;
 import edu.cmu.tetrad.graph.*;
+import edu.cmu.tetrad.sem.SemIm;
+import edu.cmu.tetrad.sem.SemPm;
 import edu.cmu.tetrad.util.RandomUtil;
 import edu.cmu.tetrad.util.TextTable;
 import edu.pitt.dbmi.algo.bayesian.constraint.inference.BCInference;
@@ -29,7 +30,7 @@ import nu.xom.Builder;
 import nu.xom.Document;
 import nu.xom.ParsingException;
 
-public class RBExperiments_sim {
+public class RBExperiments_sim_contiuous {
 
 	private static int depth;
 	private static String directory;
@@ -65,45 +66,29 @@ public class RBExperiments_sim {
 		return latents;
 	}
 
-	//	private static DataSet readInDataSet(Path dataFile) {
-	//		DataSet dataSet = null;
-	//		DataReader dataReader = new VerticalTabularDiscreteDataReader(dataFile, ',');
-	//
-	//		try {
-	//			dataSet = dataReader.readInData();
-	//		} catch (IOException exception) {
-	//			String errMsg = String.format("Failed when reading data file '%s'.", dataFile.getFileName());
-	//			System.err.println(errMsg);
-	//			System.exit(-128);
-	//		}
-	//
-	//		return dataSet;
-	//	}
-
-
 	public static void main(String[] args) throws IOException {
 		// read and process input arguments
 		Long seed = 1454147771L;
-		String data_path =  "/Users/fattanehjabbari/CCD-Project/CS-BN/dissertation/BSC-Discrete/";
+		String data_path =  "/Users/fattanehjabbari/CCD-Project/CS-BN/dissertation/BSC-Continuous/";
 		double alpha = 0.05, cutoff = 0.5, lower = 0.3, upper = 0.7;
-		int numSim = 5, numModels = 100, numBootstrapSamples = 500;
+		int numSim = 10, numModels = 100, numBootstrapSamples = 500;
 		boolean threshold1 = false, threshold2 = true;
 
-		RBExperiments_sim.directory = "/Users/fattanehjabbari/CCD-Project/CS-BN/dissertation/BSC-Discrete/";
-		RBExperiments_sim.algorithm = "FCI";
-		RBExperiments_sim.prior =  0.001;
+		RBExperiments_sim_contiuous.directory = "/Users/fattanehjabbari/CCD-Project/CS-BN/dissertation/BSC-Continuous/";
+		RBExperiments_sim_contiuous.algorithm = "FCI";
+		RBExperiments_sim_contiuous.prior =  0.5;
 		
-		int[] variableSize = new int[]{20};
-		int[] edges = new int[]{2};
+		int[] variableSize = new int[]{50, 20, 10};
+		int[] edges = new int[]{2, 4, 6};
 		double[] lv = new double[]{0.2};
-		int[] cases = new int[]{200};
-		RBExperiments_sim.completeRules = false;
-		RBExperiments_sim.depth =4;
+		int[] cases = new int[]{200, 1000, 5000};
+		RBExperiments_sim_contiuous.completeRules = false;
+		RBExperiments_sim_contiuous.depth = -1;
 		for (int numCase: cases){
 			for (int var: variableSize){
 				for (int epn: edges){
 					for (double nlv: lv){
-						RBExperiments_sim rbs = new RBExperiments_sim();
+						RBExperiments_sim_contiuous rbs = new RBExperiments_sim_contiuous();
 						rbs.experiment(numModels,alpha, threshold1, threshold2, cutoff, numBootstrapSamples, var, epn, nlv, numCase, numSim, data_path, seed, lower, upper);
 					}
 				}
@@ -118,8 +103,8 @@ public class RBExperiments_sim {
 		//		RandomUtil.getInstance().setSeed(seed + 10 * sim);
 		//		RandomUtil.getInstance().setSeed(1454147771L);
 
-		int minCat = 2;
-		int maxCat = 4;
+//		int minCat = 2;
+//		int maxCat = 4;
 		final int numEdges = (int) (numVars * edgesPerNode);
 		int numLatents = (int) Math.floor(numVars * latent);
 
@@ -144,12 +129,12 @@ public class RBExperiments_sim {
 //		PrintStream outlog;
 
 		try {
-			File dir = new File(data_path+ "/simulation-" + RBExperiments_sim.algorithm + "-depth"+ RBExperiments_sim.depth + "/");
+			File dir = new File(data_path+ "/simulation-" + RBExperiments_sim_contiuous.algorithm + "-depth"+ RBExperiments_sim_contiuous.depth + "/");
 			if (!threshold1){
 				cutoff = Double.NaN;
 			}
 			dir.mkdirs();
-			String outputFileName = "V"+numVars +"-E"+ edgesPerNode +"-L"+ latent + "-N" + numCases + "-M" + numModels + "-Th1" + threshold1  + "-C" + cutoff + "-BS" + numBootstrapSamples +"-" + RBExperiments_sim.algorithm +".csv";
+			String outputFileName = "V"+numVars +"-E"+ edgesPerNode +"-L"+ latent + "-N" + numCases + "-M" + numModels + "-Th1" + threshold1  + "-C" + cutoff + "-BS" + numBootstrapSamples +"-" + RBExperiments_sim_contiuous.algorithm +".csv";
 //			String logFileName = "V"+numVars +"-E"+ edgesPerNode +"-L"+ latent + "-N" + numCases + "-Th1" + threshold1  + "-C" + cutoff + "-BS" + numBootstrapSamples +"-Fci" +".log";
 
 			File file = new File(dir, outputFileName);
@@ -167,16 +152,16 @@ public class RBExperiments_sim {
 
 		// loop over simulations
 		for (int s = 0; s < numSim; s++){
-			RandomUtil.getInstance().setSeed(14541771L + 10 * s);
+			RandomUtil.getInstance().setSeed(1454147771L + 10 * s);
 			
 			PrintStream outlog;
 			try {
-				File dir = new File(data_path+ "/simulation-" + RBExperiments_sim.algorithm + "-depth"+ RBExperiments_sim.depth +"/logfiles-V" + numVars +"-E"+ edgesPerNode +"-L"+ latent + "-N" + numCases + "-M" + numModels + "-BS" + numBootstrapSamples);
+				File dir = new File(data_path+ "/simulation-" + RBExperiments_sim_contiuous.algorithm + "-depth"+ RBExperiments_sim_contiuous.depth +"/logfiles-V" + numVars +"-E"+ edgesPerNode +"-L"+ latent + "-N" + numCases + "-M" + numModels + "-BS" + numBootstrapSamples);
 				dir.mkdirs();
 				if (!threshold1){
 					cutoff = Double.NaN;
 				}
-				String logFileName = "V"+numVars +"-E"+ edgesPerNode +"-L"+ latent + "-N" + numCases  + "-M" + numModels + "-Th1" + threshold1  + "-C" + cutoff + "-BS" + numBootstrapSamples +"-S" +s + "-" + RBExperiments_sim.algorithm +".log";
+				String logFileName = "V"+numVars +"-E"+ edgesPerNode +"-L"+ latent + "-N" + numCases  + "-M" + numModels + "-Th1" + threshold1  + "-C" + cutoff + "-BS" + numBootstrapSamples +"-S" +s + "-" + RBExperiments_sim_contiuous.algorithm +".log";
 				File logFile = new File(dir, logFileName);
 				if (logFile.exists() && logFile.length() != 0){ 
 					return;
@@ -199,10 +184,10 @@ public class RBExperiments_sim {
 
 			System.out.println("generating pm ...");
 
-			BayesPm pm = new BayesPm(dag, minCat, maxCat);
+			SemPm pm = new SemPm(dag);
 			System.out.println("generating im ...");
 
-			MlBayesIm im = new MlBayesIm(pm, MlBayesIm.RANDOM);
+			SemIm im = new SemIm(pm);
 
 			System.out.println("simulating data ...");
 			// simulate train and test data from BN
@@ -213,14 +198,14 @@ public class RBExperiments_sim {
 
 			// get the true underlying PAG
 			final DagToPag2 dagToPag = new DagToPag2(dag);
-			dagToPag.setCompleteRuleSetUsed(RBExperiments_sim.completeRules);
+			dagToPag.setCompleteRuleSetUsed(RBExperiments_sim_contiuous.completeRules);
 			Graph PAG_True = dagToPag.convert();
 			PAG_True = GraphUtils.replaceNodes(PAG_True, data.getVariables());
 			outlog.println("PAG_True: " +PAG_True);
 			
 			// run RFCI to get a PAG using chi-squared test
 			long start = System.currentTimeMillis();
-			Graph rfciPag = runPagCs(data, alpha, PAG_True);
+			Graph rfciPag = runPagCs(data, alpha);
 			long RfciTime = System.currentTimeMillis() - start;
 			System.out.println("FCI done!");
 
@@ -228,7 +213,7 @@ public class RBExperiments_sim {
 			// are queried during the search
 			List<Graph> bscPags = new ArrayList<Graph>();
 			start = System.currentTimeMillis();
-			IndTestProbabilisticBDeu2 testBSC = runRB(data, bscPags, numModels, threshold1, PAG_True);
+			IndTestProbabilisticSemBic testBSC = runRB(data, bscPags, numModels, threshold1, PAG_True);
 			long BscRfciTime = System.currentTimeMillis() - start;
 			Map<IndependenceFact, Double> H = testBSC.getH();
 			System.out.println("FB (FCI-BSC) done!");
@@ -586,7 +571,7 @@ public class RBExperiments_sim {
 		// create variables
 		List<Node> vars = new ArrayList<>();
 		for (int i = 0; i < numVars; i++) {
-			vars.add(new DiscreteVariable("X" + i));
+			vars.add(new ContinuousVariable("X" + i));
 		}
 		return vars;
 	}
@@ -1046,7 +1031,7 @@ public class RBExperiments_sim {
 	private BayesIm loadBayesIm(String filename, boolean useDisplayNames) {
 		try {
 			Builder builder = new Builder();
-			File dir = new File(RBExperiments_sim.directory + "/xdsl");
+			File dir = new File(this.directory + "/xdsl");
 			File file = new File(dir, filename);
 			Document document = builder.build(file);
 			XdslXmlParser parser = new XdslXmlParser();
@@ -1248,8 +1233,8 @@ public class RBExperiments_sim {
 
 		for (int b = 0; b < numBootstrapSamples; b++) {
 			DataSet bsData = DataUtils.getBootstrapSample(data, data.getNumRows());
-			IndTestProbabilistic bsTest = new IndTestProbabilistic(bsData);
-//			IndTestProbabilisticBDeu2 bsTest = new IndTestProbabilisticBDeu2(bsData, RBExperiments_sim.prior);
+			//			IndTestProbabilistic bsTest = new IndTestProbabilistic(bsData);
+			IndTestProbabilisticBDeu2 bsTest = new IndTestProbabilisticBDeu2(bsData, RBExperiments_sim_contiuous.prior);
 			bsTest.setThreshold(threshold);
 			for (IndependenceFact f : HCopy.keySet()) {
 				boolean ind = bsTest.isIndependent(f.getX(), f.getY(), f.getZ());
@@ -1315,19 +1300,19 @@ public class RBExperiments_sim {
 
 	}
 
-	private IndTestProbabilisticBDeu2 runRB(DataSet data, List<Graph> pags, int numModels, boolean threshold, Graph gs) {
+	private IndTestProbabilisticSemBic runRB(DataSet data, List<Graph> pags, int numModels, boolean threshold, Graph gs) {
 //		IndTestProbabilistic BSCtest = new IndTestProbabilistic(data);
-		IndTestProbabilisticBDeu2 BSCtest = new IndTestProbabilisticBDeu2(data, RBExperiments_sim.prior);
+		IndTestProbabilisticSemBic BSCtest = new IndTestProbabilisticSemBic(data);
 		BSCtest.setThreshold(threshold);
-		BSCtest.setGoldStandard(gs);
-		BSCtest.setIsMain(true);
+//		BSCtest.setGoldStandard(gs);
+//		BSCtest.setIsMain(true);
 //		BDeuScore score = new BDeuScore(data);
 
 		Fci BSCrfci = new Fci(BSCtest);//, score);
 
 		BSCrfci.setVerbose(false);
-		BSCrfci.setCompleteRuleSetUsed(RBExperiments_sim.completeRules);
-		BSCrfci.setDepth(RBExperiments_sim.depth);
+		BSCrfci.setCompleteRuleSetUsed(RBExperiments_sim_contiuous.completeRules);
+		BSCrfci.setDepth(RBExperiments_sim_contiuous.depth);
 
 		for (int i = 0; i < numModels; i++) {
 			if (i % 10 == 0)
@@ -1340,16 +1325,15 @@ public class RBExperiments_sim {
 		return BSCtest;
 	}
 
-	private Graph runPagCs(DataSet data, double alpha, Graph gs) {
-		IndTestChiSquare test = new IndTestChiSquare(data, alpha);
-		test.setGoldStandard(gs);
-		test.setIsMain(true);
+	private Graph runPagCs(DataSet data, double alpha) {
+//		IndTestChiSquare test = new IndTestChiSquare(data, alpha);
 //		BDeuScore score = new BDeuScore (data);
+		IndTestFisherZ test = new IndTestFisherZ(data, alpha);
 
 		Fci fci1 = new Fci(test); //, score);
-		fci1.setDepth(RBExperiments_sim.depth);
+		fci1.setDepth(RBExperiments_sim_contiuous.depth);
 		fci1.setVerbose(false);
-		fci1.setCompleteRuleSetUsed(RBExperiments_sim.completeRules);
+		fci1.setCompleteRuleSetUsed(RBExperiments_sim_contiuous.completeRules);
 		Graph PAG_CS = fci1.search();
 		PAG_CS = GraphUtils.replaceNodes(PAG_CS, data.getVariables());
 		return PAG_CS;
@@ -1791,6 +1775,4 @@ public class RBExperiments_sim {
 		//		}
 	}
 }
-
-
 

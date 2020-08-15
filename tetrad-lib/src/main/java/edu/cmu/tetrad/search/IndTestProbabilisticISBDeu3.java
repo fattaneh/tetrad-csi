@@ -49,7 +49,7 @@ import org.apache.commons.math3.special.Gamma;
  *
  * @author Fattaneh Jabbari 5/2020
  */
-public class IndTestProbabilisticISBDeu2 implements IndependenceTest {
+public class IndTestProbabilisticISBDeu3 implements IndependenceTest {
 
 	private boolean threshold = false;
 
@@ -93,7 +93,7 @@ public class IndTestProbabilisticISBDeu2 implements IndependenceTest {
 	/**
 	 * Initializes the test using a discrete data sets.
 	 */
-	public IndTestProbabilisticISBDeu2(DataSet dataSet, DataSet test, Map<IndependenceFact, Double> H_population, Graph populationGraph) {
+	public IndTestProbabilisticISBDeu3(DataSet dataSet, DataSet test, Map<IndependenceFact, Double> H_population, Graph populationGraph) {
 		if (!dataSet.isDiscrete()) {
 			throw new IllegalArgumentException("Not a discrete data set.");
 
@@ -173,7 +173,7 @@ public class IndTestProbabilisticISBDeu2 implements IndependenceTest {
 			}
 
 			if (_z.length == 0){
-				pInd = computeInd(this.data, this.prior, x, y, z);
+				pInd = computeInd(this.data, this.prior, false, x, y, z);
 			}
 
 			else{
@@ -187,7 +187,7 @@ public class IndTestProbabilisticISBDeu2 implements IndependenceTest {
 //				double priorInd = 0.5;
 				if(data_is.getNumRows() > 0){ 
 //					if (data_rest.getNumRows() > 0){ 
-					double priorInd = computeInd(data_rest, this.prior, x, y, z);
+					double priorInd = computeInd(data_rest, this.prior, true, x, y, z);
 //					}
 					pInd_is = computeInd_IS(data_is, priorInd, values_z, x, y, z);
 //					double pInd_is2 = computeInd_IS(data_is, 0.5, values_z, x, y, z);
@@ -229,7 +229,7 @@ public class IndTestProbabilisticISBDeu2 implements IndependenceTest {
 	}
 
 
-	public double computeInd(DataSet data, double priorI, Node x, Node y, Node... z) {
+	public double computeInd(DataSet data, double priorI, boolean isPrior, Node x, Node y, Node... z) {
 		BDeuScoreWOprior score = new BDeuScoreWOprior(data);
 
 		List<Node> z_list = new ArrayList<>();
@@ -266,7 +266,15 @@ public class IndTestProbabilisticISBDeu2 implements IndependenceTest {
 		double rowPrior_yxz = score.getSamplePrior() / (r2);
 
 		
-		double priorInd =  Math.log(priorI) / r; // Math.log(Math.pow(priorI, z.length+1)) / r;
+//		System.out.println("node dim: " + Arrays.toString(this.nodeDimensions));
+//
+//		System.out.println("_x_values: " + this.nodeDimensions[_x]);
+//		System.out.println("_y_values: " + this.nodeDimensions[_y]);
+		
+//		double priorInd = Math.log(priorI) / r;  
+//		double priorDep = Math.log(1.0 - Math.exp(priorInd));
+		
+		double priorInd = Math.log(priorI) / r; ;// Math.log(Math.pow(priorI, z.length+1)) / r;
 		double priorDep = Math.log(1.0 - Math.exp(priorInd));
 
 //		double d_xz = 0.0, d_yz = 0.0, d_yxz = 0.0;
@@ -356,8 +364,13 @@ public class IndTestProbabilisticISBDeu2 implements IndependenceTest {
 		}
 
 		
-		p_ind = Math.exp(d_ind - d_all);
-
+		if (isPrior){
+			p_ind = Math.exp((d_ind - d_all)/(r-1));
+		}
+		else{
+			p_ind = Math.exp(d_ind - d_all);
+		}
+//		System.out.println("p_ind: " + p_ind);
 		return p_ind;
 	}
 //	
@@ -489,12 +502,12 @@ public class IndTestProbabilisticISBDeu2 implements IndependenceTest {
 		int _y = this.indices.get(y);
 		int[] _z = new int[z.length];
 		int [] _xz = new int[_z.length + 1];
-		int r = 1, r3 = 1;
+		int r = 1;
 //		ArrayList<CountObjects> d_z = new ArrayList<CountObjects>();
 		for (int i = 0; i < z.length; i++) {
 			_z[i] = this.indices.get(z[i]);
 			_xz[i] = _z[i];
-			r3 *= this.nodeDimensions[_z[i]];
+//			r *= this.nodeDimensions[_z[i]];
 		}
 		_xz[_z.length] = _x;
 		//	Arrays.sort(_xz);
@@ -511,8 +524,7 @@ public class IndTestProbabilisticISBDeu2 implements IndependenceTest {
 
 		//	System.out.println("_x_values: " + this.nodeDimensions[_x]);
 		//	System.out.println("_y_values: " + this.nodeDimensions[_y]);
-		
-		double priorInd = Math.log(priorI);  
+		double priorInd = Math.log(priorI) / r;  
 		double priorDep = Math.log(1.0 - priorInd);
 		//	double d_xz = 0.0, d_yz = 0.0, d_yxz = 0.0;
 		for (int j = 0; j < r; j++) {

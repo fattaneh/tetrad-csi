@@ -156,7 +156,7 @@ public class TestISFGS_LOOCV {
 			logFile.println("kappa = " + k_add);
 			
 			Map <String, Double> fdist= new HashMap<String, Double>();
-			for (int i = 0; i < trainDataOrig.getNumColumns()-1; i++){
+			for (int i = 0; i < trainDataOrig.getNumColumns(); i++){
 				fdist.put(trainDataOrig.getVariable(i).getName(), 0.0);
 			}
 			

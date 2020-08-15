@@ -24,6 +24,8 @@ package edu.cmu.tetrad.search;
 import edu.cmu.tetrad.data.DataSet;
 import edu.cmu.tetrad.data.DiscreteVariable;
 import edu.cmu.tetrad.data.ICovarianceMatrix;
+import edu.cmu.tetrad.graph.Graph;
+import edu.cmu.tetrad.graph.GraphUtils;
 import edu.cmu.tetrad.graph.IndependenceFact;
 import edu.cmu.tetrad.graph.Node;
 import edu.cmu.tetrad.util.NumberFormatUtil;
@@ -84,6 +86,10 @@ public final class IndTestChiSquare implements IndependenceTest {
     private HashMap<IndependenceFact, Double> H;
 
     private boolean verbose = false;
+
+	private boolean isMain;
+
+	private Graph gold;
 
     /**
      * Constructs a new independence checker to check conditional independence facts for discrete data using a g square
@@ -218,8 +224,11 @@ public final class IndTestChiSquare implements IndependenceTest {
         this.df = result.getDf();
         this.pValue = result.getPValue();
         H.put(new IndependenceFact(x, y, z), result.getPValue());
-
         
+//         if (this.isMain){
+//			IndTestDSep dsep = new IndTestDSep(this.gold);
+//			System.out.println(x + " _||_ " + y +" | " + z +": " + (this.pValue) + ", " + result.isIndep() + ", " + dsep.isIndependent(x, y, z));
+//		}
         if (result.isIndep()) {
             StringBuilder sb = new StringBuilder();
             sb.append("INDEPENDENCE ACCEPTED: ");
@@ -420,6 +429,13 @@ public final class IndTestChiSquare implements IndependenceTest {
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
     }
+	public void setGoldStandard(Graph gs) {
+		gs = GraphUtils.replaceNodes(gs, this.variables);
+		this.gold = gs;
+	}
+	public void setIsMain(boolean main) {
+		this.isMain = main;
+	}
 }
 
 

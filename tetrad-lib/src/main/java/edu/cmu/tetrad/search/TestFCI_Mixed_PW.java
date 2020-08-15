@@ -37,7 +37,7 @@ public class TestFCI_Mixed_PW {
 		String data_path =  "/Users/fattanehjabbari/CCD-Project/CS-BN/experiments_Mixed";
 		boolean threshold = true;
 		double edgesPerNode = 6.0, latent = 0.2, kappa = 0.5, prior = 0.5;
-		int numVars = 10, numCases = 1000, numTests = 1000, numActualTest = 100, numSim = 10, time = 10, nSim=1;
+		int numVars = 12, numCases = 1000, numTests = 1000, numActualTest = 100, numSim = 10, time = 10, nSim=1;
 		
 		double[] alpha = new double[] {0.01, 0.001, 0.0001, 0.00001}, cutoff = new double[] {0.3, 0.5, 0.7, 0.9}; 
 		System.out.println(Arrays.asList(args));
@@ -109,7 +109,7 @@ public class TestFCI_Mixed_PW {
         parameters.set("numMeasures", numVars);
         parameters.set("numLatents", numLatents);
         parameters.set("saveLatentVars", true);
-        parameters.set("percentDiscrete", 50);
+        parameters.set("percentDiscrete", 1);
         
        parameters.set("randomizeColumns", true);
 
@@ -130,7 +130,6 @@ public class TestFCI_Mixed_PW {
         parameters.set("meanLow", 0.5);
         parameters.set("meanHigh", 1.5);
         
-        parameters.set("percentDiscrete", 50);
         parameters.set("penaltyDiscount", 1);
         parameters.set("structurePrior", 1); 
         parameters.set("samplePrior", 1);

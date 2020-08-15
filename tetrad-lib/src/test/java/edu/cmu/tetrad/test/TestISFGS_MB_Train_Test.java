@@ -30,19 +30,19 @@ import edu.cmu.tetrad.util.DelimiterUtils;
 public class TestISFGS_MB_Train_Test {
 	public static void main(String[] args) {
 		
-//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/Shyam-data/";
-//		String dataName = "port";
-//		String pathToTrainData = pathToFolder + "PORT/" + dataName + "_train.csv";
-//		String pathToTestData = pathToFolder + "PORT/" + dataName + "_test.csv";
-//
-//		String target = "217.DIREOUT";
+		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/dissertation/Shyam-data/";
+		String dataName = "port";
+		String pathToTrainData = pathToFolder + "PORT/" + dataName + "_train.csv";
+		String pathToTestData = pathToFolder + "PORT/" + dataName + "_test.csv";
+		new_subset
+		String target = "217.DIREOUT";
 		
-		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/Shyam-data/";
-		String dataName = "CP";
-		String pathToTrainData = pathToFolder + "Chronic pancreatitis/" + dataName + "_train.csv";
-		String pathToTestData = pathToFolder + "Chronic pancreatitis/" + dataName + "_test.csv";
-
-		String target = "disease";
+//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/dissertation/Shyam-data/";
+//		String dataName = "CP";
+//		String pathToTrainData = pathToFolder + "Chronic pancreatitis/" + dataName + "_train.csv";
+//		String pathToTestData = pathToFolder + "Chronic pancreatitis/" + dataName + "_test.csv";
+//
+//		String target = "disease";
 		
 		// Read in the data
 		DataSet trainData = readData(pathToTrainData);
@@ -56,7 +56,24 @@ public class TestISFGS_MB_Train_Test {
 		double structurePrior = 1.0;
 		Graph graphP = BNlearn_pop(trainData, knowledge, samplePrior, structurePrior);
 		System.out.println("Pop graph:" + graphP.getEdges());
+		PrintStream logFile;
+		try {
+			File dir = new File( pathToFolder + "/IGES/MB/" + dataName + "/PESS" + samplePrior);
+			dir.mkdirs();
+			String outputFileName = dataName + "PESS" + samplePrior +"_log.txt";
+			File fileAUC = new File(dir, outputFileName);
+			logFile = new PrintStream(new FileOutputStream(fileAUC));
 
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		logFile.println("train: " + trainData.getNumRows() +", " + trainData.getNumColumns());
+		logFile.println("test: " + testData.getNumRows() +", " + testData.getNumColumns());
+		logFile.println("Pop graph:" + graphP.getEdges());
+		
+		System.out.println("PESS = " + samplePrior);
+		logFile.println("PESS = " + samplePrior);
+		
 		double T_plus = 0.9;
 		double T_minus = 0.1;
 		
@@ -69,24 +86,55 @@ public class TestISFGS_MB_Train_Test {
 			double[] probs_is = new double[testData.getNumRows()];
 			double[] probs_p = new double[testData.getNumRows()];
 			int[] truth = new int[testData.getNumRows()];
+			double[] llr = new double[testData.getNumRows()];
+			double average_llr = 0.0;
 			Map <KeyMB, Double> stats= new HashMap<KeyMB, Double>();
-			PrintStream outForAUC;
+		
+			
+			PrintStream outForAUC, out;
 			try {
-				File dir = new File( pathToFolder + "/outputs/MB/" + dataName);
+				File dir = new File( pathToFolder + "/IGES/MB/" + dataName + "/PESS" + samplePrior);
 				dir.mkdirs();
-				String outputFileName = dataName + "-AUROC-Kappa"+ k_add +".csv";
+				String outputFileName = dataName + "-AUROC-Kappa"+ k_add + "PESS" + samplePrior +".csv";
 				File fileAUC = new File(dir, outputFileName);
 				outForAUC = new PrintStream(new FileOutputStream(fileAUC));
+				
+				outputFileName = dataName + "FeatureDist-Kappa"+ k_add + "PESS" + samplePrior +".csv";
+				File filePredisctors = new File(dir, outputFileName);
+				out = new PrintStream(new FileOutputStream(filePredisctors));
+
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
 
+			System.out.println("kappa = " + k_add);
+			logFile.println("kappa = " + k_add);
+			
+			Map <String, Double> fdist= new HashMap<String, Double>();
+			for (int i = 0; i < trainData.getNumColumns(); i++){
+				fdist.put(trainData.getVariable(i).getName(), 0.0);
+			}
+//			try {
+//				File dir = new File( pathToFolder + "/IGES/MB/" + dataName);
+//				dir.mkdirs();
+//				String outputFileName = dataName + "-AUROC-Kappa"+ k_add +".csv";
+//				File fileAUC = new File(dir, outputFileName);
+//				outForAUC = new PrintStream(new FileOutputStream(fileAUC));
+//			} catch (Exception e) {
+//				throw new RuntimeException(e);
+//			}
 
+
+			out.println("features, fraction of occurance in cases");
 			outForAUC.println("y, population-FGES, instance-specific-FGES");//, DEGs");
 
+	
 			// loop over test cases
 			for (int i = 0; i < testData.getNumRows(); i++){
 				
+				if (i%30 == 0){
+					System.out.println(i);
+				}
 				DataSet test = testData.subsetRows(new int[]{i});
 				
 				// learn the IS graph
@@ -103,6 +151,15 @@ public class TestISFGS_MB_Train_Test {
 				Graph mb_i = GraphUtils.markovBlanketDag(dagI.getNode(target), dagI);
 				probs_is[i]= estimation(trainData, test, mb_i, target);
 
+				List<Node> mb_nodes = mb_i.getNodes();
+				mb_nodes.remove(mb_i.getNode(target));
+				for (Node no: mb_nodes){
+					if (fdist.get(no.getName())!=null)
+						fdist.put(no.getName(), fdist.get(no.getName()) + 1.0);
+					else
+						fdist.put(no.getName(), 1.0);
+				}
+
 				//get the prob from population model
 				DagInPatternIterator iteratorP = new DagInPatternIterator(graphP);
 				Graph dagP = iteratorP.next();
@@ -110,6 +167,27 @@ public class TestISFGS_MB_Train_Test {
 				Graph mb_p = GraphUtils.markovBlanketDag(dagP.getNode(target), dagP);
 				probs_p[i] = estimation(trainData, test, mb_p, target);; 
 
+				ISBDeuScore scoreI = new ISBDeuScore(trainData, test);
+				scoreI.setSamplePrior(samplePrior);
+				scoreI.setKAddition(k_add);
+				scoreI.setKDeletion(k_add);
+				scoreI.setKReorientation(k_add);
+				ISFges iges = new ISFges(scoreI);				
+				iges.setPopulationGraph(graphP);
+//				iges.setInitialGraph(graphP);
+				List <Node> mb_nodes_all = mb_i.getNodes();
+				mb_nodes_all.addAll(mb_p.getNodes());
+				Graph mb_i2 = new EdgeListGraph(mb_nodes_all);
+				Graph mb_p2 = new EdgeListGraph(mb_nodes_all);
+				for (Edge e : mb_i.getEdges()){
+					mb_i2.addEdge(e);
+				}
+				for (Edge e : mb_p.getEdges()){
+					mb_p2.addEdge(e);
+				}
+				llr[i] = iges.scoreDag(mb_i2, graphI) - iges.scoreDag(mb_p2, graphP);
+				average_llr += llr[i];
+				
 				//graph comparison
 				GraphUtils.GraphComparison cmp = SearchGraphUtils.getGraphComparison(mb_i, mb_p);
 				
@@ -129,21 +207,38 @@ public class TestISFGS_MB_Train_Test {
 			double auroc_p = AUC.measure(truth, probs_p);
 			double auroc = AUC.measure(truth, probs_is);
 			
-			double fcr_p = FCR.measure(truth, probs_p, T_plus, T_minus);
-			double fcr = FCR.measure(truth, probs_is, T_plus, T_minus);
+//			double fcr_p = FCR.measure(truth, probs_p, T_plus, T_minus);
+//			double fcr = FCR.measure(truth, probs_is, T_plus, T_minus);
 
 			System.out.println( "AUROC_P: "+ auroc_p);
 			System.out.println( "AUROC: "+ auroc);
-			System.out.println( "FCR_P: "+ fcr_p);
-			System.out.println( "FCR: "+ fcr);
+			logFile.println( "AUROC_P: "+ auroc_p);
+			logFile.println( "AUROC: "+ auroc);
+//			System.out.println( "FCR_P: "+ fcr_p);
+//			System.out.println( "FCR: "+ fcr);
 
 
 			for (KeyMB k : stats.keySet()){
 				System.out.println(k.print(k) + ":" + (stats.get(k)/testData.getNumRows())*100);
+				logFile.println(k.print(k) + ":" + (stats.get(k)/testData.getNumRows())*100);
+
 			}
+			System.out.println("average_llr: " + (average_llr/ testData.getNumRows()));
+			logFile.println("average_llr: " + (average_llr/ testData.getNumRows()));
 			System.out.println("-----------------");
+			logFile.println("-----------------");
+			
+			
+			Map<String, Double> sortedfdist = sortByValue(fdist, false);
+
+			for (String k : sortedfdist.keySet()){
+				out.println(k + ", " + (fdist.get(k)/testData.getNumRows()));
+				
+			}
 			outForAUC.close();
+			out.close();
 		}
+		logFile.close();
 	}
 	
 	private static Graph learnBNIS(DataSet trainData, DataSet test, double kappa, Graph graphP, IKnowledge knowledge, double samplePrior){

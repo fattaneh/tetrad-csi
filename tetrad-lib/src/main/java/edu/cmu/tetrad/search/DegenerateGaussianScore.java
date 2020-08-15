@@ -28,6 +28,7 @@ import org.apache.commons.math3.linear.BlockRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +93,7 @@ public class DegenerateGaussianScore implements Score {
             Node v = this.variables.get(i_);
 
             if (v instanceof DiscreteVariable) {
+            	System.out.println("DISCERET: " + v);
 
                 Map<String, Integer> keys = new HashMap<>();
                 for (int j = 0; j < this.N; j++) {
@@ -172,6 +174,8 @@ public class DegenerateGaussianScore implements Score {
         }
 
         double dof = (A_.length*(A_.length + 1) - B_.length*(B_.length + 1)) / 2.0;
+        System.out.println("i: " + i  + ", lengthA: " + Arrays.toString(A_) + ", lengthB: " + Arrays.toString(B_));
+        System.out.println("dof: " + dof);
         double ldetA = log(this.cov.getSelection(A_, A_).det());
         double ldetB = log(this.cov.getSelection(B_, B_).det());
         double lik = this.N *(ldetB - ldetA + L2PE*(B_.length - A_.length));

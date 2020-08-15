@@ -1,4 +1,4 @@
-package edu.cmu.tetrad.test;
+package edu.cmu.tetrad.search;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -16,8 +16,9 @@ import java.util.stream.Collectors;
 import edu.cmu.tetrad.bayes.*;
 import edu.cmu.tetrad.data.DataSet;
 import edu.cmu.tetrad.data.DiscreteVariable;
+import edu.cmu.tetrad.data.IKnowledge;
+import edu.cmu.tetrad.data.Knowledge2;
 import edu.cmu.tetrad.graph.*;
-import edu.cmu.tetrad.search.*;
 import edu.pitt.dbmi.data.reader.tabular.VerticalDiscreteTabularDatasetFileReader;
 import edu.pitt.dbmi.data.reader.tabular.VerticalDiscreteTabularDatasetReader;
 import edu.cmu.tetrad.util.DataConvertUtils;
@@ -55,17 +56,17 @@ class KeyMB {
 public class TestISFGES_MB_LOOCV {
 	public static void main(String[] args) {
 
-		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/dissertation/Shyam-data/";
-		String dataName = "genims_mortality_4i";
-		String pathToData = pathToFolder + "GenIMS/" + dataName + ".csv";
-		String target = "day90_status";
+//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/Shyam-data/";
+//		String dataName = "genims_mortality_4i";
+//		String pathToData = pathToFolder + "GenIMS/" + dataName + ".csv";
+//		String target = "day90_status";
 		
-//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/dissertation/Shyam-data/";
+//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/Shyam-data/";
 //		String dataName = "genims_sepsis_5i";
 //		String pathToData = pathToFolder + "GenIMS/" + dataName + ".csv";
 //		String target = "everss";
 		
-//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/dissertation/Shyam-data/";
+//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/Shyam-data/";
 //		String dataName = "port_all";
 //		String pathToData = pathToFolder + "PORT/" + dataName + ".csv";
 //		String target = "217.DIREOUT";
@@ -76,17 +77,17 @@ public class TestISFGES_MB_LOOCV {
 //		String pathToData = pathToFolder + dataName + ".csv";
 //		String target = "y";
 		
-//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/dissertation/UCI/";
-//		String dataName = "SPECT.train";
-//		String pathToData = pathToFolder + dataName + ".csv";
-//		String target = "y";
+		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/dissertation/UCI/";
+		String dataName = "SPECT.train";
+		String pathToData = pathToFolder + dataName + ".csv";
+		String target = "y";
 		
-//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/dissertation/TDI_DEG/";
+//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/TDI_DEG/";
 //		String dataName = "DEGmatrix.UPMCcell4greg.TDIDEGfeats";
 //		String pathToData = pathToFolder + "/" + dataName + ".csv";
 //		String target = "PD1response";
 
-//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/dissertation/lung_cancer/data/";
+//		String pathToFolder = "/Users/fattanehjabbari/CCD-Project/CS-BN/lung_cancer/data/";
 //		String dataName = "LCMR_Processed4_NA_surv";
 //		String pathToData = pathToFolder + dataName + ".csv";
 //		String target = "Survive1";
@@ -103,14 +104,9 @@ public class TestISFGES_MB_LOOCV {
 		try {
 			File dir = new File( pathToFolder + "/IGES/MB/" + dataName + "/PESS" + samplePrior);
 			dir.mkdirs();
-
 			String outputFileName = dataName + "PESS" + samplePrior +"_log.txt";
 			File fileAUC = new File(dir, outputFileName);
-			if (fileAUC.exists() && fileAUC.length() != 0){ 
-				return;
-			}else{
-				logFile = new PrintStream(new FileOutputStream(fileAUC));
-			}
+			logFile = new PrintStream(new FileOutputStream(fileAUC));
 
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -124,7 +120,7 @@ public class TestISFGES_MB_LOOCV {
 		logFile.println("PESS = " + samplePrior);
 
 
-		for (int p = 7; p <= 7; p++){
+		for (int p = 5; p <= 5; p++){
 
 			double k_add =  p/10.0; 
 
@@ -156,7 +152,7 @@ public class TestISFGES_MB_LOOCV {
 			logFile.println("kappa = " + k_add);
 			
 			Map <String, Double> fdist= new HashMap<String, Double>();
-			for (int i = 0; i < trainDataOrig.getNumColumns() ; i++){
+			for (int i = 0; i < trainDataOrig.getNumColumns(); i++){
 				fdist.put(trainDataOrig.getVariable(i).getName(), 0.0);
 			}
 			
@@ -186,10 +182,7 @@ public class TestISFGES_MB_LOOCV {
 				List<Node> mb_nodes = mb_i.getNodes();
 				mb_nodes.remove(mb_i.getNode(target));
 				for (Node no: mb_nodes){
-					if (fdist.get(no.getName())!=null)
-						fdist.put(no.getName(), fdist.get(no.getName()) + 1.0);
-					else
-						fdist.put(no.getName(), 1.0);
+					fdist.put(no.getName(), fdist.get(no.getName()) + 1.0);
 				}
 
 				//get the prob from population model
@@ -198,7 +191,7 @@ public class TestISFGES_MB_LOOCV {
 				dagP = GraphUtils.replaceNodes(dagP, trainData.getVariables());
 				Graph mb_p = GraphUtils.markovBlanketDag(dagP.getNode(target), dagP);
 				probs_p[i] = estimation(trainData, test, (Dag) mb_p, target);
-				System.out.println("mb_p:  "+ mb_p);
+
 				ISBDeuScore scoreI = new ISBDeuScore(trainData, test);
 				scoreI.setSamplePrior(samplePrior);
 				scoreI.setKAddition(k_add);
@@ -417,23 +410,23 @@ public class TestISFGES_MB_LOOCV {
 		graphP = GraphUtils.replaceNodes(graphP, trainDataOrig.getVariables());
 		return graphP;
 	}
-//	private static IKnowledge createKnowledge(DataSet trainDataOrig, String target) {
-//		int numVars = trainDataOrig.getNumColumns();
-//		IKnowledge knowledge = new Knowledge2();
-//		int[] tiers = new int[2];
-//		tiers[0] = 0;
-//		tiers[1] = 1;
-//		for (int i=0 ; i< numVars; i++) {
-//			if (!trainDataOrig.getVariable(i).getName().equals(target)){
-//				knowledge.addToTier(0, trainDataOrig.getVariable(i).getName());
-//			}
-//			else{
-//				knowledge.addToTier(1, trainDataOrig.getVariable(i).getName());
-//			}
-//		}
-//		knowledge.setTierForbiddenWithin(0, true);
-//		return knowledge;
-//	}
+	private static IKnowledge createKnowledge(DataSet trainDataOrig, String target) {
+		int numVars = trainDataOrig.getNumColumns();
+		IKnowledge knowledge = new Knowledge2();
+		int[] tiers = new int[2];
+		tiers[0] = 0;
+		tiers[1] = 1;
+		for (int i=0 ; i< numVars; i++) {
+			if (!trainDataOrig.getVariable(i).getName().equals(target)){
+				knowledge.addToTier(0, trainDataOrig.getVariable(i).getName());
+			}
+			else{
+				knowledge.addToTier(1, trainDataOrig.getVariable(i).getName());
+			}
+		}
+		knowledge.setTierForbiddenWithin(0, true);
+		return knowledge;
+	}
 	private static DataSet readData(String pathToData) {
 		Path trainDataFile = Paths.get(pathToData);
 		char delimiter = ',';

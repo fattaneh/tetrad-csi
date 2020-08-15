@@ -95,7 +95,7 @@ public class TestISFGS_Train_Test {
 			outForAUC.println("y, population-FGES, instance-specific-FGES");//, DEGs");
 
 			Map <String, Double> fdist= new HashMap<String, Double>();
-			for (int i = 0; i < trainData.getNumColumns()-1; i++){
+			for (int i = 0; i < trainData.getNumColumns(); i++){
 				fdist.put(trainData.getVariable(i).getName(), 0.0);
 			}
 			out.println("features, fraction of occurance in cases");

@@ -30,7 +30,7 @@ import java.util.List;
 /**
  * Calculates the BDeu score.
  */
-public class BDeuScorWOprior implements LocalDiscreteScore, IBDeuScore, Score {
+public class BDeuScoreWOprior implements LocalDiscreteScore, IBDeuScore, Score {
     private List<Node> variables;
     private int[][] data;
     private int sampleSize;
@@ -40,7 +40,7 @@ public class BDeuScorWOprior implements LocalDiscreteScore, IBDeuScore, Score {
 
     private int[] numCategories;
 
-    public BDeuScorWOprior(DataSet dataSet) {
+    public BDeuScoreWOprior(DataSet dataSet) {
         if (dataSet == null) {
             throw new NullPointerException("Data was not provided.");
         }

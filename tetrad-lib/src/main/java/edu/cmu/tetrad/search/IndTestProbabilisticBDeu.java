@@ -53,7 +53,7 @@ public class IndTestProbabilisticBDeu implements IndependenceTest {
      * Calculates probabilities of independence for conditional independence facts.
      */
 //    private final BCInference bci;
-    private BDeuScorWOprior score;
+    private BDeuScoreWOprior score;
     private int[] nodeDimensions;
     // Not
     private boolean threshold = false;
@@ -104,7 +104,7 @@ public class IndTestProbabilisticBDeu implements IndependenceTest {
             nodeDimensions[j] = numCategories;
         }
 
-        this.score = new BDeuScorWOprior(this.data);
+        this.score = new BDeuScoreWOprior(this.data);
 
         nodes = dataSet.getVariables();
 

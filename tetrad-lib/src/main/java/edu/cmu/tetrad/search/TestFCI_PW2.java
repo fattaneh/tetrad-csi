@@ -37,7 +37,7 @@ public class TestFCI_PW2 {
 		String data_path =  "/Users/fattanehjabbari/CCD-Project/CS-BN/experiments_newBSC_Chi2";
 		boolean threshold = true;
 		double alpha = 0.05, cutoff = 0.5, edgesPerNode = 2.0, latent = 0.2, kappa = 0.5, prior = 0.5;
-		int numVars = 11, numCases = 1000, numTests = 1000, numActualTest = 100, numSim = 10, time = 10, nSim=1;
+		int numVars = 10, numCases = 1000, numTests = 1000, numActualTest = 100, numSim = 10, time = 10, nSim=1;
 
 		System.out.println(Arrays.asList(args));
 		for ( int i = 0; i < args.length; i++ ) {   
@@ -161,7 +161,7 @@ public class TestFCI_PW2 {
 			indTest_pop.setThreshold(threshold);
 			indTest_pop.setCutoff(cutoff);
 //			BDeuScore scoreP = new BDeuScore(trainData);
-
+			
 			Fci fci_pop = new Fci(indTest_pop);
 			Graph graphP = fci_pop.search();
 			System.out.println("new method:" + graphP.getEdges());

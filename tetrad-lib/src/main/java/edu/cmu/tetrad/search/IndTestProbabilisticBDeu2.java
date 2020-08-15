@@ -28,6 +28,7 @@ import edu.cmu.tetrad.data.DiscreteVariable;
 import edu.cmu.tetrad.data.ICovarianceMatrix;
 import edu.cmu.tetrad.graph.EdgeListGraph;
 import edu.cmu.tetrad.graph.Graph;
+import edu.cmu.tetrad.graph.GraphUtils;
 import edu.cmu.tetrad.graph.IndependenceFact;
 import edu.cmu.tetrad.graph.Node;
 import edu.cmu.tetrad.util.RandomUtil;
@@ -56,9 +57,9 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 	 * Calculates probabilities of independence for conditional independence facts.
 	 */
 	//    private final BCInference bci;
-	private BDeuScorWOprior score;
+	private BDeuScoreWOprior score;
 	private int[] nodeDimensions;
-	
+
 	// Not
 	private boolean threshold = false;
 
@@ -66,7 +67,7 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 	 * The data set for which conditional  independence judgments are requested.
 	 */
 	private final DataSet data;
-
+	public Graph gold;
 	/**
 	 * The nodes of the data set.
 	 */
@@ -87,6 +88,7 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 	private double cutoff = 0.5;
 	private int[][] data_array;
 	private double prior = 0.5;
+	private boolean isMain=false;
 
 	//==========================CONSTRUCTORS=============================//
 	/**
@@ -115,8 +117,7 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 			nodeDimensions[j] = numCategories;
 		}
 
-		this.score = new BDeuScorWOprior(this.data);
-
+		this.score = new BDeuScoreWOprior(this.data);
 
 		nodes = dataSet.getVariables();
 
@@ -136,6 +137,7 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 
 	@Override
 	public boolean isIndependent(Node x, Node y, List<Node> z) {
+//		System.out.println(x + "_||_" + y  + "|" + z);
 		Node[] _z = z.toArray(new Node[z.size()]);
 		return isIndependent(x, y, _z);
 	}
@@ -150,7 +152,12 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 		if (!H.containsKey(key)) {
 			//            System.out.println("key: " + key);
 
+			//			if (z.length == 0){
+			//				pInd = computeInd_old(x, y, z);
+			//			}
+			//			else{
 			pInd = computeInd(x, y, z);
+			//			}
 			//        	pInd = computeIndWithMultipleStructures(x, y, x);
 			H.put(key, pInd);
 		}
@@ -182,19 +189,16 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 	}
 
 	public double computeInd(Node x, Node y, Node... z) {
-		List<Node> z_list = new ArrayList<>();
-        Collections.addAll(z_list, z);
-//        System.out.println("---------------------");
-//		System.out.println(x + " _||_ " + y +" | " + z_list);
-		
-		double p_ind = Double.NaN, d_ind = 0.0, d_all = 0.0;
+		double p_ind = Double.NaN, d_ind = 0.0, d_all = 0.0, d_dep = 0.0;
 
+		List<Node> z_list = new ArrayList<>();
+		Collections.addAll(z_list, z);
+		
 		int _x = this.indices.get(x);
 		int _y = this.indices.get(y);
 		int[] _z = new int[z.length];
 		int [] _xz = new int[_z.length + 1];
 		int r = 1;
-		ArrayList<CountObjects> d_z = new ArrayList<CountObjects>();
 		for (int i = 0; i < z.length; i++) {
 			_z[i] = this.indices.get(z[i]);
 			_xz[i] = _z[i];
@@ -205,69 +209,67 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 //		System.out.println("z dim: " + r);
 
 		_xz[_z.length] = _x;
-//		Arrays.sort(_xz);
-		
 		int r2 = r * this.nodeDimensions[_x];
 
 		double cellPrior_xz = this.score.getSamplePrior() / (this.nodeDimensions[_x] * r);
 		double cellPrior_yz = this.score.getSamplePrior() / (this.nodeDimensions[_y] * r);
 		double cellPrior_yxz = this.score.getSamplePrior() / (this.nodeDimensions[_y] * r2);
+
 		double rowPrior_xz = this.score.getSamplePrior() / (r);
 		double rowPrior_yz = this.score.getSamplePrior() / (r);
 		double rowPrior_yxz = this.score.getSamplePrior() / (r2);
 
-		
-		double priorInd = Math.log(this.prior) / r;  
-		double priorDep = Math.log(1 - Math.exp(priorInd));
-//		double d_xz = 0.0, d_yz = 0.0, d_yxz = 0.0;
+		double priorInd,  priorDep;
+//		priorInd = Math.log(Math.pow(this.prior, z.length+1)) / r;
+		priorInd = Math.log(this.prior) / r;
+		priorDep = Math.log(1.0 - Math.exp(priorInd));
+
 		for (int j = 0; j < r; j++) {
-			double d_xz = 0.0, d_yz = 0.0, d_yxz = 0.0;
+			double p_xz = 0.0, p_yz = 0.0, p_yxz = 0.0;
 			int[] _z_dim = getDimension(_z);
 			int[] _z_values = getParentValues(_y, j, _z_dim);
-//			System.out.println("_z_values: " + Arrays.toString(_z_values));
+			//System.out.println("_z_values: " + Arrays.toString(_z_values));
 			DataSet data_is = new BoxDataSet((BoxDataSet) this.data);
 			splitData(data_is, _z, _z_values);
 //			System.out.println("data_is: " + data_is.getNumRows());
 
-			BDeuScorWOprior score_z = new BDeuScorWOprior(data_is);
+			BDeuScoreWOprior score_z = new BDeuScoreWOprior(data_is);
 			CountObjects counts_xz = score_z.localCounts(_x, _z);
 			CountObjects counts_yz = score_z.localCounts(_y, _z);
 			CountObjects counts_yxz = score_z.localCounts(_y, _xz);
+
 //			System.out.println("xz.n_jk: " + Arrays.deepToString(counts_xz.n_jk));
 //			System.out.println("xz.n_j: " + Arrays.toString(counts_xz.n_j));
-//			
+//
 //			System.out.println("yz.n_jk: " + Arrays.deepToString(counts_yz.n_jk));
 //			System.out.println("yz.n_j: " + Arrays.toString(counts_yz.n_j));
-//			
+//
 //			System.out.println("yxz.n_jk: " + Arrays.deepToString(counts_yxz.n_jk));
 //			System.out.println("yxz.n_j: " + Arrays.toString(counts_yxz.n_j));
-			
-			// compute d_{x|z}
+
+			// compute p_{D_x|z}
 			int [] n_j = counts_xz.n_j;
 			int [][] n_jk = counts_xz.n_jk;
-			d_xz -= Gamma.logGamma(rowPrior_xz + n_j[j]);
-			d_xz += Gamma.logGamma(rowPrior_xz);
+			p_xz -= Gamma.logGamma(rowPrior_xz + n_j[j]);
+			p_xz += Gamma.logGamma(rowPrior_xz);
 			for (int k = 0; k < this.nodeDimensions[_x]; k++) {
-				d_xz += Gamma.logGamma(cellPrior_xz + n_jk[j][k]);
-				d_xz -= Gamma.logGamma(cellPrior_xz);
+				p_xz += Gamma.logGamma(cellPrior_xz + n_jk[j][k]);
+				p_xz -= Gamma.logGamma(cellPrior_xz);
 			}
-//			System.out.println("d_xz: " + d_xz);
-
-			// compute d_{y|z}
+//			System.out.println("p_{D_x|z}: " + p_xz);
+			
+			// compute p_{D_y|z}
 			n_j = counts_yz.n_j;
 			n_jk = counts_yz.n_jk;
-//			System.out.println("d_yz b: " + d_yz);
-			d_yz-= Gamma.logGamma(rowPrior_yz + n_j[j]);
-			d_yz += Gamma.logGamma(rowPrior_yz);
+			p_yz -= Gamma.logGamma(rowPrior_yz + n_j[j]);
+			p_yz += Gamma.logGamma(rowPrior_yz);
 			for (int k = 0; k < this.nodeDimensions[_y]; k++) {
-				d_yz += Gamma.logGamma(cellPrior_yz + n_jk[j][k]);
-				d_yz -= Gamma.logGamma(cellPrior_yz);
+				p_yz += Gamma.logGamma(cellPrior_yz + n_jk[j][k]);
+				p_yz -= Gamma.logGamma(cellPrior_yz);
 			}
-//			d_yz += priorInd;
+//			System.out.println("p_{D_y|z}: " + p_yz);
 
-//			System.out.println("d_yz: " + d_yz);
-
-			// compute d_{y|x,z}
+			// compute p_{D_y|x,z}
 			n_j = counts_yxz.n_j;
 			n_jk = counts_yxz.n_jk;
 
@@ -277,32 +279,45 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 				_xz_values[v] = _z_values[v];
 				_xz_dim[v] = _z_dim[v];
 			}
-//			System.out.println("_xz_values b: " + Arrays.toString(_xz_values));
+			_xz_dim[_z_dim.length] = this.nodeDimensions[_x];
 
 			for (int j2 = 0; j2 < this.nodeDimensions[_x]; j2++) {
 				_xz_values[_z.length] = j2;
-//				System.out.println("_xz_values a: " + Arrays.toString(_xz_values));
-			}
-				_xz_dim[_z_values.length] = this.nodeDimensions[_x];
 				int rowIndex = getRowIndex(_xz_dim, _xz_values);
-				d_yxz-= Gamma.logGamma(rowPrior_yxz + n_j[rowIndex]);
-				d_yxz += Gamma.logGamma(rowPrior_yxz);
+				p_yxz-= Gamma.logGamma(rowPrior_yxz + n_j[rowIndex]);
+				p_yxz += Gamma.logGamma(rowPrior_yxz);
 				for (int k = 0; k < this.nodeDimensions[_y]; k++) {
-					d_yxz += Gamma.logGamma(cellPrior_yxz + n_jk[rowIndex][k]);
-					d_yxz -= Gamma.logGamma(cellPrior_yxz);
+					p_yxz += Gamma.logGamma(cellPrior_yxz + n_jk[rowIndex][k]);
+					p_yxz -= Gamma.logGamma(cellPrior_yxz);
 				}
-//				d_yxz += priorDep;
-				
-				d_ind += priorInd + (d_xz + d_yz);
-				d_all += lnXpluslnY (priorInd + (d_xz + d_yz), priorDep + (d_xz + d_yxz));
 			}
 
+//			System.out.println("p_{D_y|x,z}: " + p_yxz);
+//			System.out.println("priorInd: " + priorInd);
+//			System.out.println("priorDep: " + priorDep);
+//
+//			System.out.println("BN_ind: " + (priorInd + (p_xz + p_yz)));
+//			System.out.println("BN_dep: " + (priorDep + (p_xz + p_yxz)));
+
+			d_ind += priorInd + (p_xz + p_yz);
+			d_dep += priorDep + (p_xz + p_yxz);
+			d_all += lnXpluslnY (priorInd + (p_xz + p_yz), priorDep + (p_xz + p_yxz));
+		}
+		
+//		System.out.println("p_ind: " + d_ind);
+//		System.out.println("p_dep: " + d_dep);
+//		System.out.println("p_all: " + d_all);
+		
 		p_ind = Math.exp(d_ind - d_all);
-
-//		System.out.println("p_ind: " + p_ind);
-
+		//double p_ind2 = Math.exp(d_ind - (lnXpluslnY(d_ind, d_dep)));
+//		if (this.isMain){
+//			IndTestDSep dsep = new IndTestDSep(this.gold);
+//			System.out.println(x + " _||_ " + y +" | " + z_list +": " + p_ind + ", "+ (p_ind>=this.cutoff) + ", " + dsep.isIndependent(x, y, z));
+//		}
+//		System.out.println("--------------------");
 		return p_ind;
 	}
+	
 	public int[] getParentValues(int nodeIndex, int rowIndex, int[] dims) {
 		int[] values = new int[dims.length];
 
@@ -329,110 +344,78 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 		}
 		return dims;
 	}
-	
+
 	private void splitData(DataSet data_xy, int[] parents, int[] parentValues){
 		int sampleSize = data.getNumRows();
 
 		Set<Integer> rows_is = new HashSet<>();
 		Set<Integer> rows_res = new HashSet<>();
-		
+
 		for (int i = 0; i < data.getNumRows(); i++){
 			rows_res.add(i);
 		}
 
-//		for(IndependenceFact f : H_xy.keySet()){
+		for (int i = 0; i < sampleSize; i++){
+			int[] parentValuesCase = new int[parents.length];
 
-			for (int i = 0; i < sampleSize; i++){
-				int[] parentValuesTest = new int[parents.length];
-				int[] parentValuesCase = new int[parents.length];
-
-				for (int p = 0; p < parents.length ; p++){
-					parentValuesCase[p] = data_array[i][parents[p]];
-				}
-
-				if (Arrays.equals(parentValuesCase, parentValues)){
-					rows_is.add(i);
-					rows_res.remove(i);
-				}		
+			for (int p = 0; p < parents.length ; p++){
+				parentValuesCase[p] = data_array[i][parents[p]];
 			}
-//		}
+
+			if (Arrays.equals(parentValuesCase, parentValues)){
+				rows_is.add(i);
+				rows_res.remove(i);
+			}		
+		}
+		//		}
 
 		int[] is_array = new int[rows_is.size()];
 		int c = 0;
 		for(int row : rows_is) is_array[c++] = row;
-		
+
 		int[] res_array = new int[rows_res.size()];
 		c = 0;
 		for(int row : rows_res) res_array[c++] = row;
-		
+
 		Arrays.sort(is_array);
 		Arrays.sort(res_array);
-		
+
 		data_xy.removeRows(res_array);
 		//		System.out.println("data_xy: " + data_xy.getNumRows());
 		//		System.out.println("data_rest: " + data_rest.getNumRows());
 
 	}
-	private double computeIndWithMultipleStructures(Node x, Node y, Node... z) {
+
+	public double computeInd_old(Node x, Node y, Node... z) {
 		double pInd = Double.NaN;
-		List<Node> allNodes = new ArrayList<>();
-		allNodes.add(x);
-		allNodes.add(y);
-		Collections.addAll(allNodes, z);
-		Graph[] indBNs = new Graph[4];
-		for (int i = 0; i < indBNs.length; i++){
-			indBNs[i] = new EdgeListGraph(allNodes);
-		}
+		List<Node> _z = new ArrayList<>();
+		_z.add(x);
+		_z.add(y);
+		Collections.addAll(_z, z);
 
+		Graph indBN = new EdgeListGraph(_z);
 		for (Node n : z){
-			indBNs[1].addDirectedEdge(n, x);
-			indBNs[1].addDirectedEdge(n, y);
-			indBNs[2].addDirectedEdge(n, x);
-			indBNs[3].addDirectedEdge(n, y);
+			indBN.addDirectedEdge(n, x);
+			indBN.addDirectedEdge(n, y);
 		}
 
-		Graph[] depBNs = new Graph[7];
-		for (int i = 0; i < depBNs.length; i++){
-			depBNs[i] = new EdgeListGraph(allNodes);
-		}
-
-		depBNs[0].addDirectedEdge(x, y);
-		depBNs[1].addDirectedEdge(x, y);
-		depBNs[2].addDirectedEdge(y, x);
-		depBNs[4].addDirectedEdge(x, y);
-		depBNs[5].addDirectedEdge(y, x);
-		depBNs[6].addDirectedEdge(x, y);
-
+		Graph depBN = new EdgeListGraph(_z);
+		depBN.addDirectedEdge(x, y);
 		for (Node n : z){
-			depBNs[1].addDirectedEdge(n, x);
-			depBNs[2].addDirectedEdge(n, y);
-			depBNs[3].addDirectedEdge(x, n);
-			depBNs[3].addDirectedEdge(y, n);
-			depBNs[4].addDirectedEdge(n, x);
-			depBNs[4].addDirectedEdge(n, y);
-			depBNs[5].addDirectedEdge(n, x);
-			depBNs[6].addDirectedEdge(n, y);
+			depBN.addDirectedEdge(n, x);
+			depBN.addDirectedEdge(n, y);
 		}
 
-		double scoreIndAll = Double.NEGATIVE_INFINITY; 
-		double indPrior = Math.log(0.5 / (indBNs.length));
-		double[] indScores = new double[indBNs.length];
-		double[] depScores = new double[depBNs.length];
-
-		for (int i = 0; i < indScores.length; i++){
-			indScores[i] = scoreDag(indBNs[i]);
-			scoreIndAll = lnXpluslnY(scoreIndAll, (indScores[i]));// + indPrior));
-			//        	System.out.println("scoreIndAll: " + scoreIndAll);
-		}
+		double indPrior = Math.log(this.prior );
+		double indScore = scoreDag(indBN);
+		//        double indScore = scoreDag(indBN, false, null, null);
+		double scoreIndAll = indScore + indPrior;
 
 
-		double scoreDepAll = Double.NEGATIVE_INFINITY;
-		double depPrior = Math.log(0.5 / (depBNs.length));
-		for (int i = 0; i < depScores.length; i++){
-			depScores[i] = scoreDag(depBNs[i]);
-			scoreDepAll = lnXpluslnY(scoreDepAll, (depScores[i]));// + depPrior));
-			//        	System.out.println("scoreDepAll: " + scoreDepAll);
-		}
+		double depScore = scoreDag(depBN);
+		//        double depScore = scoreDag(depBN, true, x, y);
+		double depPrior = Math.log(1 - indPrior);
+		double scoreDepAll = depScore + depPrior;
 
 		double scoreAll = lnXpluslnY(scoreIndAll, scoreDepAll);
 		//    	System.out.println("scoreDepAll: " + scoreDepAll);
@@ -441,8 +424,84 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 
 		pInd = Math.exp(scoreIndAll - scoreAll);
 
+		List<Node> z_list = new ArrayList<>();
+		Collections.addAll(z_list, z);
+
+		IndTestDSep dsep = new IndTestDSep(this.gold);
+		System.out.println(x + " _||_ " + y +" | " + z_list + ": " + pInd + ", " + dsep.isIndependent(x, y, z));
+
 		return pInd;
 	}
+//	private double computeIndWithMultipleStructures(Node x, Node y, Node... z) {
+//		double pInd = Double.NaN;
+//		List<Node> allNodes = new ArrayList<>();
+//		allNodes.add(x);
+//		allNodes.add(y);
+//		Collections.addAll(allNodes, z);
+//		Graph[] indBNs = new Graph[4];
+//		for (int i = 0; i < indBNs.length; i++){
+//			indBNs[i] = new EdgeListGraph(allNodes);
+//		}
+//
+//		for (Node n : z){
+//			indBNs[1].addDirectedEdge(n, x);
+//			indBNs[1].addDirectedEdge(n, y);
+//			indBNs[2].addDirectedEdge(n, x);
+//			indBNs[3].addDirectedEdge(n, y);
+//		}
+//
+//		Graph[] depBNs = new Graph[7];
+//		for (int i = 0; i < depBNs.length; i++){
+//			depBNs[i] = new EdgeListGraph(allNodes);
+//		}
+//
+//		depBNs[0].addDirectedEdge(x, y);
+//		depBNs[1].addDirectedEdge(x, y);
+//		depBNs[2].addDirectedEdge(y, x);
+//		depBNs[4].addDirectedEdge(x, y);
+//		depBNs[5].addDirectedEdge(y, x);
+//		depBNs[6].addDirectedEdge(x, y);
+//
+//		for (Node n : z){
+//			depBNs[1].addDirectedEdge(n, x);
+//			depBNs[2].addDirectedEdge(n, y);
+//			depBNs[3].addDirectedEdge(x, n);
+//			depBNs[3].addDirectedEdge(y, n);
+//			depBNs[4].addDirectedEdge(n, x);
+//			depBNs[4].addDirectedEdge(n, y);
+//			depBNs[5].addDirectedEdge(n, x);
+//			depBNs[6].addDirectedEdge(n, y);
+//		}
+//
+//		double scoreIndAll = Double.NEGATIVE_INFINITY; 
+//		double indPrior = Math.log(0.5 / (indBNs.length));
+//		double[] indScores = new double[indBNs.length];
+//		double[] depScores = new double[depBNs.length];
+//
+//		for (int i = 0; i < indScores.length; i++){
+//			indScores[i] = scoreDag(indBNs[i]);
+//			scoreIndAll = lnXpluslnY(scoreIndAll, (indScores[i]));// + indPrior));
+//			//        	System.out.println("scoreIndAll: " + scoreIndAll);
+//		}
+//
+//
+//		double scoreDepAll = Double.NEGATIVE_INFINITY;
+//		double depPrior = Math.log(0.5 / (depBNs.length));
+//		for (int i = 0; i < depScores.length; i++){
+//			depScores[i] = scoreDag(depBNs[i]);
+//			scoreDepAll = lnXpluslnY(scoreDepAll, (depScores[i]));// + depPrior));
+//			//        	System.out.println("scoreDepAll: " + scoreDepAll);
+//		}
+//
+//		double scoreAll = lnXpluslnY(scoreIndAll, scoreDepAll);
+//		//    	System.out.println("scoreDepAll: " + scoreDepAll);
+//		//        System.out.println("scoreIndAll: " + scoreIndAll);
+//		//        System.out.println("scoreAll: " + scoreAll);
+//
+//		pInd = Math.exp(scoreIndAll - scoreAll);
+//
+//		return pInd;
+//	}
 
 
 
@@ -562,6 +621,13 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 	@Override
 	public void setAlpha(double alpha) {
 		throw new UnsupportedOperationException();
+	}
+	public void setGoldStandard(Graph gs) {
+		gs = GraphUtils.replaceNodes(gs, this.data.getVariables());
+		this.gold = gs;
+	}
+	public void setIsMain(boolean main) {
+		this.isMain = main;
 	}
 
 	@Override
@@ -853,30 +919,30 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 ////			System.out.println("d_z: " + Arrays.deepToString(l.n_jk));
 ////		}
 ////
-////		System.out.println("d_xz: " + Arrays.deepToString(counts_xz.n_jk));
-////		System.out.println("d_yz: " + Arrays.deepToString(counts_yz.n_jk));
-////		System.out.println("d_yxz: " + Arrays.deepToString(counts_yxz.n_jk));
-////		System.out.println("d_yxz: " + Arrays.toString(counts_yxz.n_j));
+////		System.out.println("p_xz: " + Arrays.deepToString(counts_xz.n_jk));
+////		System.out.println("p_yz: " + Arrays.deepToString(counts_yz.n_jk));
+////		System.out.println("p_yxz: " + Arrays.deepToString(counts_yxz.n_jk));
+////		System.out.println("p_yxz: " + Arrays.toString(counts_yxz.n_j));
 //		
-//		double d_xz = 0.0, d_yz = 0.0, d_yxz = 0.0;
+//		double p_xz = 0.0, p_yz = 0.0, p_yxz = 0.0;
 //		for (int j = 0; j < r; j++) {
 //			// compute d_{x|z}
 //			int [] n_j = counts_xz.n_j;
 //			int [][] n_jk = counts_xz.n_jk;
-//			d_xz -= Gamma.logGamma(rowPrior_xz + n_j[j]);
-//			d_xz += Gamma.logGamma(rowPrior_xz);
+//			p_xz -= Gamma.logGamma(rowPrior_xz + n_j[j]);
+//			p_xz += Gamma.logGamma(rowPrior_xz);
 //			for (int k = 0; k < this.nodeDimensions[_x]; k++) {
-//				d_xz += Gamma.logGamma(cellPrior_xz + n_jk[j][k]);
-//				d_xz -= Gamma.logGamma(cellPrior_xz);
+//				p_xz += Gamma.logGamma(cellPrior_xz + n_jk[j][k]);
+//				p_xz -= Gamma.logGamma(cellPrior_xz);
 //			}
 //			// compute d_{y|z}
 //			n_j = counts_yz.n_j;
 //			n_jk = counts_yz.n_jk;
-//			d_yz-= Gamma.logGamma(rowPrior_yz + n_j[j]);
-//			d_yz += Gamma.logGamma(rowPrior_yz);
+//			p_yz-= Gamma.logGamma(rowPrior_yz + n_j[j]);
+//			p_yz += Gamma.logGamma(rowPrior_yz);
 //			for (int k = 0; k < this.nodeDimensions[_y]; k++) {
-//				d_yz += Gamma.logGamma(cellPrior_yz + n_jk[j][k]);
-//				d_yz -= Gamma.logGamma(cellPrior_yz);
+//				p_yz += Gamma.logGamma(cellPrior_yz + n_jk[j][k]);
+//				p_yz -= Gamma.logGamma(cellPrior_yz);
 //			}
 //
 //			// compute d_{y|x,z}
@@ -896,15 +962,15 @@ public class IndTestProbabilisticBDeu2 implements IndependenceTest {
 //				_xz_values[_z_values.length] = j2;
 //				_xz_dim[_z_values.length] = this.nodeDimensions[_x];
 //				int rowIndex = getRowIndex(_xz_dim, _xz_values);
-//				d_yxz-= Gamma.logGamma(rowPrior_yxz + n_j[rowIndex]);
-//				d_yxz += Gamma.logGamma(rowPrior_yxz);
+//				p_yxz-= Gamma.logGamma(rowPrior_yxz + n_j[rowIndex]);
+//				p_yxz += Gamma.logGamma(rowPrior_yxz);
 //				for (int k = 0; k < this.nodeDimensions[_y]; k++) {
-//					d_yxz += Gamma.logGamma(cellPrior_yxz + n_jk[rowIndex][k]);
-//					d_yxz -= Gamma.logGamma(cellPrior_yxz);
+//					p_yxz += Gamma.logGamma(cellPrior_yxz + n_jk[rowIndex][k]);
+//					p_yxz -= Gamma.logGamma(cellPrior_yxz);
 //				}
 //			}
-//			d_ind += (d_xz + d_yz);
-//			d_all += lnXpluslnY (d_xz + d_yz, d_xz + d_yxz);
+//			d_ind += (p_xz + p_yz);
+//			d_all += lnXpluslnY (p_xz + p_yz, p_xz + p_yxz);
 //			
 //			
 //		}
